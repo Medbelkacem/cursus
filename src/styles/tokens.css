@@ -1,0 +1,153 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Cursus — Design tokens
+   Single source of truth for colors, type, spacing.
+   Light theme = default. Dark theme overrides under [data-theme="dark"].
+   Étape 2 enrichira ce fichier ; pour l'étape 1, on a déjà tout le nécessaire
+   pour rendre l'écran de chargement et la page d'accueil propres.
+   ───────────────────────────────────────────────────────────────────────── */
+
+:root,
+[data-theme="light"] {
+  /* ─── Couleurs neutres — papier crème institutionnel ─── */
+  --c-paper:        #faf8f3;
+  --c-paper-2:      #f0ede5;
+  --c-paper-3:      #e6e2d8;
+  --c-ink:          #1a1916;
+  --c-ink-2:        #3d3a34;
+  --c-mute:         #7a756c;
+  --c-line:         #d9d4c8;
+  --c-line-soft:    #ece8df;
+  --c-block:        #e8e4d9;
+  --c-surface:      #ffffff;
+  --c-surface-2:    #faf8f3;
+
+  /* ─── Marque — bleu Gauloise (unique primaire) ─── */
+  --c-gauloise:     #1f5fbc;
+  --c-gauloise-d:   #174a93;
+  --c-gauloise-l:   #4a85d4;
+  --c-gauloise-50:  #eaf0fa;
+  --c-gauloise-100: #d4e1f6;
+  --c-gauloise-tint: rgba(31, 95, 188, 0.08);
+  --c-on-accent:    #ffffff;
+
+  /* ─── Sémantiques ─── */
+  --c-success:      #3d6b2a;
+  --c-success-soft: #e7eedd;
+  --c-warn:         #b8821a;
+  --c-warn-soft:    #f4e8c8;
+  --c-danger:       #9a3826;
+  --c-danger-soft:  #f0d8cf;
+
+  /* ─── Ombres chaudes ─── */
+  --shadow-sm:    0 1px 2px rgba(60, 50, 30, 0.06);
+  --shadow-md:    0 4px 14px rgba(60, 50, 30, 0.08), 0 1px 2px rgba(60, 50, 30, 0.04);
+  --shadow-lg:    0 12px 32px rgba(60, 50, 30, 0.10), 0 2px 6px rgba(60, 50, 30, 0.05);
+  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+
+  /* Focus ring — accessible AAA contrast on paper background */
+  --c-focus:      var(--c-gauloise);
+  --ring-focus:   0 0 0 3px rgba(31, 95, 188, 0.28);
+}
+
+/* ─── Dark theme — encre nuit, papier devient ardoise ─── */
+[data-theme="dark"] {
+  --c-paper:        #121110;
+  --c-paper-2:      #1b1a17;
+  --c-paper-3:      #25231f;
+  --c-ink:          #f4f1ea;
+  --c-ink-2:        #c9c4ba;
+  --c-mute:         #8e8a82;
+  --c-line:         #2e2b26;
+  --c-line-soft:    #25231f;
+  --c-block:        #1f1d1a;
+  --c-surface:      #1b1a17;
+  --c-surface-2:    #161412;
+
+  --c-gauloise:     #5b8fd9;
+  --c-gauloise-d:   #4a85d4;
+  --c-gauloise-l:   #7da8e6;
+  --c-gauloise-50:  rgba(91, 143, 217, 0.10);
+  --c-gauloise-100: rgba(91, 143, 217, 0.18);
+  --c-gauloise-tint: rgba(91, 143, 217, 0.14);
+  --c-on-accent:    #0c1118;
+
+  --c-success:      #7da664;
+  --c-success-soft: rgba(125, 166, 100, 0.16);
+  --c-warn:         #d4a14d;
+  --c-warn-soft:    rgba(212, 161, 77, 0.18);
+  --c-danger:       #d97a64;
+  --c-danger-soft:  rgba(217, 122, 100, 0.18);
+
+  --shadow-sm:    0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md:    0 4px 14px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-lg:    0 12px 32px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.4);
+  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+  --c-focus:      var(--c-gauloise-l);
+  --ring-focus:   0 0 0 3px rgba(125, 168, 230, 0.32);
+}
+
+:root {
+  /* ─── Typographie ─── */
+  --font-display: "Fraunces", "DM Serif Display", Georgia, serif;
+  --font-sans:    "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono:    "DM Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-arabic:  "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif;
+
+  --t-display-xl: 64px;
+  --t-display:    44px;
+  --t-h1:         32px;
+  --t-h2:         22px;
+  --t-h3:         16px;
+  --t-h4:         14px;
+  --t-body:       14px;
+  --t-body-sm:    13px;
+  --t-meta:       12px;
+  --t-label:      11px;
+  --t-mono:       12px;
+
+  --lh-display:   1.05;
+  --lh-heading:   1.2;
+  --lh-body:      1.55;
+  --lh-dense:     1.3;
+
+  /* ─── Espacement (échelle 4px) ─── */
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3:  12px;
+  --s-4:  16px;
+  --s-5:  20px;
+  --s-6:  24px;
+  --s-8:  32px;
+  --s-10: 40px;
+  --s-12: 48px;
+  --s-16: 64px;
+
+  /* ─── Rayons ─── */
+  --r-xs:   4px;
+  --r-sm:   6px;
+  --r-md:   8px;
+  --r-lg:   12px;
+  --r-xl:   16px;
+  --r-pill: 999px;
+
+  /* ─── Couches ─── */
+  --z-base:    1;
+  --z-card:    10;
+  --z-sticky:  50;
+  --z-overlay: 100;
+  --z-modal:   200;
+  --z-toast:   300;
+
+  /* ─── Transitions ─── */
+  --ease-out:      cubic-bezier(.2, .8, .25, 1);
+  --ease-in-out:   cubic-bezier(.4, 0, .2, 1);
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+
+  /* Largeurs de contenu */
+  --w-content:  1240px;
+  --w-form:     440px;
+  --w-sidebar:  248px;
+}

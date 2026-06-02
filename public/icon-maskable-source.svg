@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Full bleed for maskable: full color, no rounded corners (the OS clips it) -->
+  <rect width="512" height="512" fill="#1f5fbc"/>
+  <!-- Inner content kept inside the 80% safe zone (256 ± 205) -->
+  <text x="256" y="346"
+        text-anchor="middle"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="280"
+        font-weight="700"
+        fill="#faf8f3">C</text>
+  <circle cx="350" cy="190" r="26" fill="#faf8f3"/>
+</svg>

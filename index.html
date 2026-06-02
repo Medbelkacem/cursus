@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="fr" dir="ltr" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1f5fbc" />
+    <meta name="description" content="Cursus — Plateforme nationale de gestion et de suivi des instituts et centres de formation en Algérie." />
+
+    <title>Cursus — Plateforme nationale de formation</title>
+
+    <!-- Polices : Fraunces (display), DM Sans (corps), DM Mono (chiffres/labels),
+         Noto Naskh Arabic (arabe). preconnect pour la latence. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Pré-chargement du thème pour éviter le flash (FOUC) -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('cursus.theme') || 'light';
+          var l = localStorage.getItem('cursus.lang') || 'fr';
+          document.documentElement.setAttribute('data-theme', t);
+          document.documentElement.setAttribute('lang', l);
+          document.documentElement.setAttribute('dir', l === 'ar' ? 'rtl' : 'ltr');
+        } catch (e) { /* private mode — ignore */ }
+      })();
+    </script>
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- PWA : installable sur desktop, tablette et mobile -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Cursus" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="Cursus" />
+  </head>
+  <body>
+    <a href="#main-content" class="skip-link">Aller au contenu principal</a>
+    <div id="app" aria-busy="true">
+      <!-- Squelette de chargement : visible avant que main.js prenne la main -->
+      <div class="app-boot">
+        <div class="app-boot__wm">
+          <span>Cursus</span><span class="app-boot__dot"></span>
+        </div>
+        <div class="app-boot__bar"><div class="app-boot__bar-inner"></div></div>
+      </div>
+    </div>
+
+    <!-- Conteneur dédié aux toasts / overlays portés à la racine du DOM -->
+    <div id="toast-root" aria-live="polite" aria-atomic="true"></div>
+    <div id="modal-root"></div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

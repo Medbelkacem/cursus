@@ -1,0 +1,25 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   RTL — règles spécifiques arabe.
+   On utilise majoritairement les propriétés logiques CSS (margin-inline-start,
+   inset-inline-end, etc.) pour que le passage LTR ↔ RTL soit automatique.
+   Ce fichier ne contient que les surcharges qu'on ne peut pas exprimer
+   avec des propriétés logiques.
+   ───────────────────────────────────────────────────────────────────────── */
+
+html[dir="rtl"] body {
+  font-family: var(--font-arabic), var(--font-sans);
+}
+
+html[dir="rtl"] {
+  /* Les chiffres restent en latin (lisibilité des notes /20, dates, etc.) */
+  --num-font: var(--font-mono);
+}
+html[dir="rtl"] .num,
+html[dir="rtl"] .mono { direction: ltr; unicode-bidi: isolate; }
+
+/* Inverser les icônes directionnelles décoratives (flèches "→") */
+html[dir="rtl"] .icon-flip { transform: scaleX(-1); }
+
+/* Tableaux : aligner le texte sur le bord de départ */
+html[dir="rtl"] th,
+html[dir="rtl"] td { text-align: right; }

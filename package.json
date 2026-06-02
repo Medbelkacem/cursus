@@ -1,0 +1,26 @@
+{
+  "name": "cursus",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Cursus — Plateforme de gestion et de suivi pour les instituts et centres de formation en Algérie",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4173",
+    "lint": "echo 'Add ESLint here if desired'",
+    "supabase:link": "supabase link",
+    "supabase:push": "supabase db push",
+    "supabase:functions:deploy": "supabase functions deploy send-document-email"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "chart.js": "^4.4.4"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

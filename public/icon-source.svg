@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Brand-blue tile -->
+  <rect width="512" height="512" rx="96" fill="#1f5fbc"/>
+  <!-- White "C" serif glyph, centered, safe-zone-friendly -->
+  <text x="256" y="372"
+        text-anchor="middle"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="360"
+        font-weight="700"
+        fill="#faf8f3">C</text>
+  <!-- Ivory accent dot -->
+  <circle cx="378" cy="178" r="34" fill="#faf8f3"/>
+</svg>

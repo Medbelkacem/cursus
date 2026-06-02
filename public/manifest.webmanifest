@@ -1,0 +1,67 @@
+{
+  "name": "Cursus — Plateforme nationale de formation",
+  "short_name": "Cursus",
+  "description": "Plateforme nationale de gestion et de suivi des instituts et centres de formation en Algérie.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "orientation": "any",
+  "lang": "fr",
+  "dir": "ltr",
+  "background_color": "#faf8f3",
+  "theme_color": "#1f5fbc",
+  "categories": ["education", "productivity", "government"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ministère",
+      "short_name": "Ministère",
+      "url": "/ministere",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Direction",
+      "short_name": "Direction",
+      "url": "/direction",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Administration",
+      "short_name": "Admin",
+      "url": "/administration",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Connexion",
+      "short_name": "Login",
+      "url": "/login",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

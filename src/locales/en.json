@@ -1,0 +1,96 @@
+{
+  "common": {
+    "save": "Save", "cancel": "Cancel", "submit": "Submit", "delete": "Delete", "edit": "Edit",
+    "loading": "Loading…", "yes": "Yes", "no": "No", "search": "Search", "back": "Back",
+    "next": "Next", "previous": "Previous", "confirm": "Confirm",
+    "logout": "Sign out", "settings": "Settings", "profile": "Profile",
+    "language": "Language", "theme": "Theme", "light": "Light", "dark": "Dark"
+  },
+  "nav": {
+    "dashboard": "Dashboard", "courses": "Courses", "attendance": "Attendance",
+    "grades": "Grades", "exams": "Exams & Labs", "documents": "Documents",
+    "subjects": "Subjects", "groups": "Groups", "users": "Users",
+    "specialties": "Specialties", "establishments": "Institutions",
+    "directions": "Regional directions", "statistics": "Statistics", "requests": "Requests"
+  },
+  "roles": {
+    "student": "Student", "teacher": "Teacher", "admin": "Administration",
+    "direction": "Regional direction", "ministry": "Ministry"
+  },
+  "home": {
+    "kicker": "National platform · Algeria",
+    "title_html": "One platform for <em>2,000 institutes</em> of vocational training, from the ministry to the student.",
+    "lede": "Cursus connects the ministry, regional directions, institutions, instructors and learners. Attendance, grades, exams, administrative documents — all in one place.",
+    "cta_login": "Sign in", "cta_signup": "Create account", "cta_contact": "Contact us",
+
+    "side_kicker": "National coverage",
+    "side_stat1_v": "~2,000",  "side_stat1_l": "Institutions covered",
+    "side_stat2_v": "5",        "side_stat2_l": "Hierarchical roles",
+    "side_stat3_v": "48",       "side_stat3_l": "Wilayas",
+    "side_stat4_v": "fr · en · ar", "side_stat4_l": "Supported languages",
+
+    "roles_kicker": "Five roles, one platform",
+    "roles_title": "From ministry to student — a clear hierarchy.",
+    "roles_lede": "Each role sees exactly what they need. Security is enforced down to the database (Row Level Security).",
+    "role_student": "Student",     "role_student_d": "Courses, attendance, grades, exams, document requests.",
+    "role_teacher": "Teacher",     "role_teacher_d": "Grade entry, exam management, attendance, course materials.",
+    "role_admin":   "Administration", "role_admin_d": "Users, specialties, subjects, document processing.",
+    "role_direction": "Regional direction", "role_direction_d": "Oversight of institutes within its zone.",
+    "role_ministry": "Ministry",   "role_ministry_d": "National statistics, monitoring of directions.",
+
+    "feat_kicker": "Everything needed, nothing more",
+    "feat_title": "The essential building blocks.",
+    "feat_courses_t": "Courses & materials",
+    "feat_courses_d": "Material uploads, organised by subject, access filtered by group.",
+    "feat_attendance_t": "Attendance",
+    "feat_attendance_d": "Present · Late · Absent — by session, by student, exportable.",
+    "feat_grades_t": "Grades & averages",
+    "feat_grades_d": "Lectures, tests, labs, exams — average weighted by coefficient.",
+    "feat_exams_t": "Exams & labs",
+    "feat_exams_d": "MCQ, open question, file upload. Built-in countdown timer.",
+    "feat_docs_t": "Administrative documents",
+    "feat_docs_d": "Student request → admin processing → automated email delivery.",
+    "feat_rls_t": "Security by default",
+    "feat_rls_d": "PostgreSQL Row Level Security. No role sees beyond its scope.",
+
+    "cta_band_title": "Ready to equip your institution?",
+    "cta_band_lede": "Cursus is built to deploy as-is. Configure Supabase, point your domain, activate your accounts."
+  },
+  "auth": {
+    "login_title": "Sign in", "login_sub": "Access your workspace according to your role.",
+    "signup_title": "Create account",
+    "signup_sub": "Tell us your role and institution. An administrator will validate your registration.",
+    "email": "Email address", "password": "Password", "confirm_password": "Confirm password",
+    "first_name": "First name", "last_name": "Last name", "phone": "Phone",
+    "role": "Role", "role_student": "Student / learner", "role_teacher": "Teacher / instructor",
+    "establishment": "Institution", "establishment_pick": "Select your institution",
+    "student_number": "Student number", "specialty": "Specialty",
+    "submit_login": "Sign in", "submit_signup": "Create my account",
+    "have_account": "Already have an account?", "no_account": "No account yet?",
+    "forgot": "Forgot password?", "or": "or",
+    "side_title": "Algerian institutions, simplified.",
+    "side_lede": "One platform for the ministry, directions, institutions, instructors and learners. Designed for clean deployment.",
+    "pending_title": "Awaiting validation",
+    "pending_lede": "Your request has been recorded. Your institution must approve it before you can access your workspace.",
+    "pending_note": "You will receive an email as soon as your account is activated.",
+    "rejected_title": "Request rejected",
+    "rejected_lede": "Your registration request was not accepted. Contact your institution for more information.",
+    "errors": {
+      "invalid_credentials": "Incorrect email or password.",
+      "missing": "Please fill in all required fields.",
+      "password_mismatch": "Passwords must match.",
+      "password_short": "Password must be at least 8 characters.",
+      "supabase_unconfigured": "The platform is not configured yet. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env."
+    }
+  },
+  "not_found": {
+    "title": "Page not found",
+    "lede": "The address you requested does not exist (or no longer does).",
+    "cta": "Back to home"
+  },
+  "design": {
+    "title": "Design system", "lede": "Visual reference of all shared components.",
+    "section_buttons": "Buttons", "section_badges": "Badges", "section_inputs": "Form fields",
+    "section_cards": "Cards", "section_kpis": "KPIs", "section_colors": "Colours", "section_typo": "Typography"
+  }
+}
