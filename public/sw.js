@@ -45,8 +45,38 @@ self.addEventListener('activate', (event) => {
   })());
 });
 
+// Plafond du cache d'assets : les noms de fichiers étant hachés, les anciennes
+// versions s'accumuleraient indéfiniment sans purge.
+const ASSET_CACHE_MAX = 60;
+
+async function trimAssetCache() {
+  const cache = await caches.open(ASSET_CACHE);
+  const keys = await cache.keys();
+  if (keys.length <= ASSET_CACHE_MAX) return;
+  // Les entrées les plus anciennes d'abord (ordre d'insertion garanti).
+  await Promise.all(keys.slice(0, keys.length - ASSET_CACHE_MAX).map((k) => cache.delete(k)));
+}
+
 self.addEventListener('message', (event) => {
-  if (event.data === 'SKIP_WAITING') self.skipWaiting();
+  const data = event.data;
+  if (data === 'SKIP_WAITING') { self.skipWaiting(); return; }
+
+  // Réchauffage : la page transmet les ressources qu'elle a chargées avant que
+  // le service worker ne contrôle le document, pour que la première visite
+  // hors ligne dispose déjà du code de l'application.
+  if (data && data.type === 'WARM_ASSETS' && Array.isArray(data.urls)) {
+    event.waitUntil((async () => {
+      const cache = await caches.open(ASSET_CACHE);
+      await Promise.all(data.urls.map(async (u) => {
+        try {
+          if (await cache.match(u)) return;
+          const res = await fetch(u, { cache: 'no-cache' });
+          if (res.ok) await cache.put(u, res);
+        } catch (_) { /* hors ligne ou ressource absente : sans conséquence */ }
+      }));
+      await trimAssetCache();
+    })());
+  }
 });
 
 self.addEventListener('fetch', (event) => {
@@ -81,7 +111,10 @@ self.addEventListener('fetch', (event) => {
       const hit = await cache.match(req);
       if (hit) return hit;
       const fresh = await fetch(req);
-      if (fresh.ok) cache.put(req, fresh.clone());
+      if (fresh.ok) {
+        await cache.put(req, fresh.clone());
+        trimAssetCache();
+      }
       return fresh;
     })());
     return;

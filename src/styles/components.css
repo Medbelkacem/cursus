@@ -661,7 +661,16 @@ html[dir="rtl"] .input--select {
   z-index: var(--z-sticky);
   backdrop-filter: blur(6px);
 }
-.lp__nav { display: flex; align-items: center; gap: var(--s-3); }
+.lp__head > .wm { min-width: 0; flex-shrink: 1; }
+.lp__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 0;
+}
+.lp__nav .btn { flex-shrink: 0; }
 
 .lp__hero {
   padding: var(--s-16) var(--s-8) var(--s-12);
@@ -918,6 +927,8 @@ html[dir="rtl"] .input--select {
   .hero { padding: var(--s-10) var(--s-5); }
   .hero__title { font-size: 32px; }
   .lp__head { padding: var(--s-3) var(--s-5); }
+  /* Sur mobile, le CTA secondaire cède la place : « Se connecter » suffit. */
+  .lp__head .btn--ghost { display: none; }
   .lp__hero { padding: var(--s-10) var(--s-5); }
   .lp__roles { grid-template-columns: 1fr; padding: 0 var(--s-5) var(--s-8); }
   .lp__features { padding: var(--s-8) var(--s-5); }
@@ -1023,7 +1034,6 @@ body.sidebar-open .sidebar-backdrop { opacity: 1; pointer-events: auto; }
 @media (max-width: 380px) {
   .topbar__h1 { font-size: 16px; }
   .topbar__crumb { display: none; }
-  .lp__head .btn--ghost { display: none; }
 }
 
 /* Tablette en paysage / petit desktop (981–1180px) — affiner les paddings */
@@ -1411,4 +1421,62 @@ tr.tr--clickable:focus-visible { outline: 2px solid var(--c-focus); outline-offs
   .form-grid--2 { grid-template-columns: 1fr; }
   .modal__foot { flex-direction: column-reverse; }
   .modal__foot .btn { width: 100%; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LISIBILITÉ SUR PETITS ÉCRANS
+   Les micro-libellés en capitales tiennent à 10px sur un écran de bureau ;
+   sur un téléphone tenu à bout de bras, ils passent à 11px et desserrent
+   légèrement l'interlettrage.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 780px) {
+  .kpi__label,
+  .dt__filter-label,
+  .sidebar__role,
+  .badge--sm,
+  .lp__role-num {
+    font-size: 11px;
+    letter-spacing: 0.05em;
+  }
+
+  /* Les valeurs d'indicateur restent lisibles sans écraser la carte */
+  .kpi__value { font-size: clamp(22px, 7vw, 28px); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ENCOCHES ET BARRES SYSTÈME (iPhone, Android gestuel, mode autonome)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@supports (padding: max(0px)) {
+  .topbar    { padding-inline: max(var(--s-4), env(safe-area-inset-left))
+                              max(var(--s-4), env(safe-area-inset-right)); }
+  .lp__head  { padding-inline: max(var(--s-5), env(safe-area-inset-left))
+                              max(var(--s-5), env(safe-area-inset-right)); }
+  .shell__content { padding-bottom: max(var(--s-4), env(safe-area-inset-bottom)); }
+  .sidebar   { padding-bottom: env(safe-area-inset-bottom); }
+  .modal-overlay { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+}
+
+/* En mode autonome (application installée), la barre supérieure colle au
+   haut de l'écran : on compense la hauteur de la barre d'état. */
+@media (display-mode: standalone) {
+  .topbar, .lp__head { padding-top: max(var(--s-3), env(safe-area-inset-top)); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TABLETTE — mieux exploiter la largeur intermédiaire (768 → 1180px)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (min-width: 641px) and (max-width: 980px) {
+  /* La barre latérale est en tiroir : le contenu occupe toute la largeur. */
+  .shell__content { padding: var(--s-5) var(--s-6); }
+  .kpi-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+  .form-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Tablette en paysage : la barre latérale revient, on resserre le contenu. */
+@media (min-width: 981px) and (max-width: 1180px) {
+  .kpi-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .dt__filter { min-width: 130px; }
 }

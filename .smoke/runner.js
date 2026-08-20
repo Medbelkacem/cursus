@@ -1,3 +1,7 @@
+import '../src/styles/tokens.css';
+import '../src/styles/base.css';
+import '../src/styles/components.css';
+import '../src/styles/rtl.css';
 // Rend chaque page de l'application avec des données simulées et remonte
 // toute erreur d'exécution. Résultat exposé dans window.__RESULT__.
 

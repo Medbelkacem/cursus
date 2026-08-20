@@ -77,3 +77,47 @@ reste manuelle tant que l'administration n'a rien configuré.
 ```bash
 npx vite --config .smoke/vite.config.js   # puis ouvrir http://localhost:5199/
 ```
+
+---
+
+## PWA et affichage multi-supports
+
+L'application est installable sur ordinateur, tablette et téléphone.
+
+| Élément | État |
+| --- | --- |
+| Manifeste | `public/manifest.webmanifest` — analysé sans erreur par Chromium, mode `standalone`, raccourcis vers les espaces Ministère / Direction / Établissement / Connexion |
+| Icônes | 192, 512, 512 maskable, apple-touch 180, favicon SVG |
+| Service worker | `public/sw.js` — activé, portée `/` |
+| Coquille hors ligne | Navigation en réseau d'abord, repli sur `index.html` en cache : l'application se charge sans réseau, y compris sur une route profonde |
+| Cache des assets | Réchauffé dès la première visite (la page transmet au SW les fichiers chargés avant sa prise de contrôle), plafonné à 60 entrées |
+| Appels API | Jamais interceptés ni mis en cache — les données restent toujours celles du serveur |
+
+### Mesures d'affichage
+
+Audit automatisé (`.smoke/responsive.js`, Chromium headless) sur sept largeurs :
+
+| Largeur | Débordement horizontal | Cibles tactiles < 32px |
+| --- | --- | --- |
+| 320 × 568 (petit téléphone) | 0 | 0 |
+| 360 × 740 | 0 | 0 |
+| 390 × 844 | 0 | 0 |
+| 412 × 915 | 0 | 0 |
+| 768 × 1024 (tablette portrait) | 0 | 0 |
+| 1024 × 768 (tablette paysage) | 0 | 0 |
+| 1440 × 900 (ordinateur) | 0 | 0 |
+
+Comportement selon la largeur :
+
+- **≤ 980px** — barre latérale en tiroir (bouton menu, fond cliquable, `Échap`), tableaux
+  défilables horizontalement, filtres empilés sur toute la largeur.
+- **641 → 980px (tablette)** — contenu pleine largeur, indicateurs sur une grille plus large.
+- **981 → 1180px (tablette paysage, petit portable)** — barre latérale fixe, grilles resserrées.
+- **> 1180px** — mise en page complète.
+- Encoches et barres système prises en compte via `env(safe-area-inset-*)`, y compris en
+  mode application installée.
+
+```bash
+npx vite --config .smoke/vite.config.js    # harnais
+node <chemin>/responsive.js                # audit multi-viewports
+```

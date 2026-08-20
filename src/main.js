@@ -33,13 +33,36 @@ async function boot() {
   root.setAttribute('aria-busy', 'false');
 }
 
-// Register the service worker (PWA). Only in production builds — in dev
-// Vite already does HMR and a SW would just cache stale modules.
+// ─────────────────────────────────────────────────────────────────────────────
+//  Service worker (PWA) — uniquement en production : en développement, Vite
+//  gère déjà le rechargement à chaud et un SW ne ferait que servir des modules
+//  périmés.
+// ─────────────────────────────────────────────────────────────────────────────
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .register('/sw.js', { scope: '/' })
-      .catch((e) => console.warn('[cursus] SW registration failed', e));
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+
+      // Le premier chargement récupère ses fichiers AVANT que le SW ne prenne
+      // la main : sans cela, le cache d'assets resterait vide et la toute
+      // première visite hors ligne n'aurait que la coquille, sans le code.
+      // On lui transmet donc la liste des ressources déjà présentes.
+      const warm = () => {
+        const sw = navigator.serviceWorker.controller || reg.active;
+        if (!sw) return;
+        const urls = [
+          ...document.querySelectorAll('script[src], link[rel="stylesheet"][href]'),
+        ]
+          .map((el) => el.src || el.href)
+          .filter((u) => u && new URL(u, location.href).origin === location.origin);
+        if (urls.length) sw.postMessage({ type: 'WARM_ASSETS', urls });
+      };
+
+      if (navigator.serviceWorker.controller) warm();
+      else navigator.serviceWorker.addEventListener('controllerchange', warm, { once: true });
+    } catch (e) {
+      console.warn('[cursus] échec d’enregistrement du service worker', e);
+    }
   });
 }
 
