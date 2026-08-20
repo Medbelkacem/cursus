@@ -66,6 +66,10 @@ begin
     if v_estab is null or not public.establishment_in_my_direction(v_estab) then
       raise exception 'établissement hors de votre wilaya' using errcode = '42501';
     end if;
+    if p_wilaya_id is not null and p_wilaya_id is distinct from v_caller_wil then
+      raise exception 'vous ne pouvez rattacher un compte qu''à votre propre wilaya'
+        using errcode = '42501';
+    end if;
     v_wilaya := v_caller_wil;
 
   elsif v_caller = 'admin' then
@@ -76,7 +80,13 @@ begin
     if v_caller_estab is null then
       raise exception 'aucun établissement associé à votre compte' using errcode = '42501';
     end if;
-    v_estab  := v_caller_estab;                  -- forcé : jamais un autre établissement
+    -- On refuse explicitement plutôt que d'ignorer en silence : l'appelant doit
+    -- savoir que la demande sort de son périmètre.
+    if p_establishment_id is not null and p_establishment_id is distinct from v_caller_estab then
+      raise exception 'vous ne pouvez créer un compte que dans votre propre établissement'
+        using errcode = '42501';
+    end if;
+    v_estab  := v_caller_estab;
     v_wilaya := v_caller_wil;
 
   else
