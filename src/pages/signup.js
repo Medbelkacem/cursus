@@ -9,19 +9,20 @@ import { toast } from '../components/toast.js';
 import { getSupabase, isSupabaseConfigured } from '../lib/supabase.js';
 
 export async function signupPage() {
-  // Charger les établissements pour le sélecteur (lecture libre via RLS).
+  // Annuaire minimal des établissements — RPC dédiée, accessible sans compte.
+  // La table elle-même reste cloisonnée par wilaya / établissement (§23).
   let establishments = [];
   const sb = getSupabase();
   if (sb) {
-    const { data, error } = await sb
-      .from('establishments')
-      .select('id, name, type, wilaya')
-      .order('name');
+    const { data, error } = await sb.rpc('public_establishments');
     if (!error && data) establishments = data;
   }
   const estabOptions = [
     { value: '', label: t('auth.establishment_pick') },
-    ...establishments.map((e) => ({ value: e.id, label: `${e.name}${e.wilaya ? ' · ' + e.wilaya : ''}` })),
+    ...establishments.map((e) => ({
+      value: e.id,
+      label: `${e.name}${e.wilaya_name ? ` · ${e.wilaya_code} — ${e.wilaya_name}` : ''}`,
+    })),
   ];
 
   const errBox = h('p.field__error', { style: { display: 'none' } });

@@ -18,13 +18,30 @@ import { signupPage } from '../pages/signup.js';
 import { pendingPage, rejectedPage } from '../pages/pending.js';
 import { profilePage } from '../pages/profile.js';
 
+// ── Écrans partagés par plusieurs rôles ──────────────────────────────────────
+import { notificationsPage } from '../pages/shared/notifications.js';
+import { accountsPage } from '../pages/shared/accounts.js';
+import { studentsMonitoringPage } from '../pages/shared/students.js';
+import { academicRulesPage } from '../pages/shared/rules.js';
+import { reportsPage } from '../pages/shared/reports.js';
+import { programsCatalogPage } from '../pages/shared/programs-view.js';
+import { apprenticeshipPage, internshipPage } from '../pages/shared/contracts.js';
+import {
+  ministryDashboardPage, wilayaDashboardPage, establishmentDashboardPage,
+} from '../pages/shared/dashboard.js';
+
+// ── Étudiant ────────────────────────────────────────────────────────────────
 import { studentDashboard } from '../pages/student/dashboard.js';
+import { studentParcoursPage } from '../pages/student/parcours.js';
+import { studentProgrammePage } from '../pages/student/programme.js';
 import { studentCoursesPage } from '../pages/student/courses.js';
 import { studentAttendancePage } from '../pages/student/attendance.js';
 import { studentGradesPage } from '../pages/student/grades.js';
 import { studentExamsPage } from '../pages/student/exams.js';
 import { studentDocumentsPage } from '../pages/student/documents.js';
+import { studentApprenticeshipPage, studentInternshipPage } from '../pages/student/contract.js';
 
+// ── Professeur ──────────────────────────────────────────────────────────────
 import { teacherDashboard } from '../pages/teacher/dashboard.js';
 import { teacherSubjectsPage } from '../pages/teacher/subjects.js';
 import { teacherAttendancePage } from '../pages/teacher/attendance.js';
@@ -32,20 +49,20 @@ import { teacherGradesPage } from '../pages/teacher/grades.js';
 import { teacherExamsPage } from '../pages/teacher/exams.js';
 import { teacherCoursesPage } from '../pages/teacher/courses.js';
 
-import { adminDashboard } from '../pages/admin/dashboard.js';
-import { adminUsersPage } from '../pages/admin/users.js';
-import { adminSpecialtiesPage } from '../pages/admin/specialties.js';
+// ── Établissement ───────────────────────────────────────────────────────────
 import { adminSubjectsPage } from '../pages/admin/subjects.js';
 import { adminRequestsPage } from '../pages/admin/requests.js';
+import { adminClassesPage } from '../pages/admin/classes.js';
 
-import { directionDashboard } from '../pages/direction/dashboard.js';
+// ── Direction de wilaya ─────────────────────────────────────────────────────
 import { directionEstablishmentsPage } from '../pages/direction/establishments.js';
-import { directionStatsPage } from '../pages/direction/stats.js';
 
-import { ministryDashboard } from '../pages/ministry/dashboard.js';
-import { ministryDirectionsPage } from '../pages/ministry/directions.js';
+// ── Ministère ───────────────────────────────────────────────────────────────
+import { ministryWilayasPage } from '../pages/ministry/wilayas.js';
 import { ministryEstablishmentsPage } from '../pages/ministry/establishments.js';
-import { ministryStatsPage } from '../pages/ministry/stats.js';
+import { ministryProgramsPage } from '../pages/ministry/programs.js';
+import { ministryProgramDetailPage } from '../pages/ministry/program-detail.js';
+import { ministryModesPage } from '../pages/ministry/modes.js';
 
 // Convertit un pattern type "/etudiant/examens/:id" en {regex, keys}
 function compile(pattern) {
@@ -66,42 +83,73 @@ const _routes = [
   ['/signup',                            signupPage],
   ['/en-attente',                        pendingPage],
   ['/refuse',                            rejectedPage],
-  ['/profil',                            profilePage],
 
-  // ── Étudiant ───────────────────────────────────────────────────────────
+  // ── Commun à tous les rôles authentifiés ───────────────────────────────
+  ['/profil',                            profilePage],
+  ['/notifications',                     notificationsPage],
+
+  // ── Étudiant (§15) ─────────────────────────────────────────────────────
   ['/etudiant',                          studentDashboard],
+  ['/etudiant/parcours',                 studentParcoursPage],
+  ['/etudiant/programme',                studentProgrammePage],
   ['/etudiant/cours',                    studentCoursesPage],
   ['/etudiant/presence',                 studentAttendancePage],
   ['/etudiant/notes',                    studentGradesPage],
   ['/etudiant/examens',                  studentExamsPage],
   ['/etudiant/examens/:id',              studentExamsPage],
   ['/etudiant/documents',                studentDocumentsPage],
+  ['/etudiant/apprentissage',            studentApprenticeshipPage],
+  ['/etudiant/stage',                    studentInternshipPage],
 
-  // ── Professeur ─────────────────────────────────────────────────────────
+  // ── Professeur (§16) ───────────────────────────────────────────────────
   ['/professeur',                        teacherDashboard],
   ['/professeur/matieres',               teacherSubjectsPage],
   ['/professeur/presence',               teacherAttendancePage],
   ['/professeur/notes',                  teacherGradesPage],
   ['/professeur/examens',                teacherExamsPage],
   ['/professeur/supports',               teacherCoursesPage],
+  ['/professeur/programmes',             programsCatalogPage],
 
-  // ── Administration ─────────────────────────────────────────────────────
-  ['/administration',                    adminDashboard],
-  ['/administration/utilisateurs',       adminUsersPage],
-  ['/administration/specialites',        adminSpecialtiesPage],
+  // ── Établissement (§19) ────────────────────────────────────────────────
+  ['/administration',                    establishmentDashboardPage],
+  ['/administration/etudiants',          studentsMonitoringPage],
+  ['/administration/classes',            adminClassesPage],
   ['/administration/matieres',           adminSubjectsPage],
+  ['/administration/programmes',         programsCatalogPage],
+  ['/administration/apprentissage',      apprenticeshipPage],
+  ['/administration/stages',             internshipPage],
+  ['/administration/reglement',          academicRulesPage],
+  ['/administration/comptes',            accountsPage],
+  ['/administration/utilisateurs',       accountsPage],
   ['/administration/demandes',           adminRequestsPage],
+  ['/administration/rapports',           reportsPage],
 
-  // ── Direction ──────────────────────────────────────────────────────────
-  ['/direction',                         directionDashboard],
+  // ── Direction de wilaya (§18) ──────────────────────────────────────────
+  ['/direction',                         wilayaDashboardPage],
   ['/direction/etablissements',          directionEstablishmentsPage],
-  ['/direction/statistiques',            directionStatsPage],
+  ['/direction/etudiants',               studentsMonitoringPage],
+  ['/direction/programmes',              programsCatalogPage],
+  ['/direction/apprentissage',           apprenticeshipPage],
+  ['/direction/stages',                  internshipPage],
+  ['/direction/reglement',               academicRulesPage],
+  ['/direction/comptes',                 accountsPage],
+  ['/direction/rapports',                reportsPage],
+  ['/direction/statistiques',            wilayaDashboardPage],
 
-  // ── Ministère ──────────────────────────────────────────────────────────
-  ['/ministere',                         ministryDashboard],
-  ['/ministere/directions',              ministryDirectionsPage],
+  // ── Ministère (§17) ────────────────────────────────────────────────────
+  ['/ministere',                         ministryDashboardPage],
+  ['/ministere/wilayas',                 ministryWilayasPage],
   ['/ministere/etablissements',          ministryEstablishmentsPage],
-  ['/ministere/statistiques',            ministryStatsPage],
+  ['/ministere/programmes',              ministryProgramsPage],
+  ['/ministere/programmes/:id',          ministryProgramDetailPage],
+  ['/ministere/modes',                   ministryModesPage],
+  ['/ministere/etudiants',               studentsMonitoringPage],
+  ['/ministere/apprentissage',           apprenticeshipPage],
+  ['/ministere/stages',                  internshipPage],
+  ['/ministere/reglement',               academicRulesPage],
+  ['/ministere/comptes',                 accountsPage],
+  ['/ministere/rapports',                reportsPage],
+  ['/ministere/statistiques',            ministryDashboardPage],
 ].map(([p, page]) => ({ ...compile(p), page }));
 
 let _root = null;
@@ -118,9 +166,10 @@ export async function initRouter(rootEl) {
     navigate(href);
   });
 
-  window.addEventListener('popstate', () => render(window.location.pathname));
+  window.addEventListener('popstate', () =>
+    render(window.location.pathname + window.location.search));
 
-  await render(window.location.pathname);
+  await render(window.location.pathname + window.location.search);
 }
 
 export function navigate(path) {
@@ -129,7 +178,12 @@ export function navigate(path) {
   render(path);
 }
 
-async function render(path) {
+async function render(fullPath) {
+  // Le pattern ne s'applique qu'au chemin ; la query string est exposée à part.
+  const qIndex = fullPath.indexOf('?');
+  const path  = qIndex === -1 ? fullPath : fullPath.slice(0, qIndex);
+  const query = new URLSearchParams(qIndex === -1 ? '' : fullPath.slice(qIndex));
+
   let match = null;
   let params = {};
   for (const r of _routes) {
@@ -141,7 +195,7 @@ async function render(path) {
     }
   }
   const page = match ? match.page : notFoundPage;
-  const ctx = { path, params };
+  const ctx = { path, params, query, fullPath };
 
   _root.classList.add('is-leaving');
   await new Promise((r) => requestAnimationFrame(r));

@@ -53,7 +53,7 @@ export async function teacherSubjectsPage() {
 
   return AppShell({
     nav: navFor('teacher'),
-    active: t('nav.subjects'),
+    active: t('nav.my_subjects'),
     role: roleLabel('teacher'),
     user: { name: `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim(), initials: initialsOf(profile) },
     title: 'Matières',

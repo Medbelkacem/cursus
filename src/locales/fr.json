@@ -19,7 +19,8 @@
     "language": "Langue",
     "theme": "Thème",
     "light": "Clair",
-    "dark": "Sombre"
+    "dark": "Sombre",
+    "my_profile": "Mon profil"
   },
   "nav": {
     "dashboard": "Tableau de bord",
@@ -35,13 +36,29 @@
     "establishments": "Établissements",
     "directions": "Directions",
     "statistics": "Statistiques",
-    "requests": "Demandes"
+    "requests": "Demandes",
+    "wilayas": "Wilayas",
+    "programs": "Programmes",
+    "modes": "Modes de formation",
+    "students": "Étudiants",
+    "apprenticeship": "Apprentissage",
+    "internships": "Stages",
+    "rules": "Règlement",
+    "accounts": "Comptes",
+    "reports": "Rapports",
+    "notifications": "Notifications",
+    "classes": "Classes",
+    "path": "Parcours",
+    "program": "Programme",
+    "materials": "Supports",
+    "my_subjects": "Mes matières",
+    "internship_s5": "Stage S5"
   },
   "roles": {
     "student": "Étudiant",
     "teacher": "Professeur",
-    "admin": "Administration",
-    "direction": "Direction",
+    "admin": "Établissement",
+    "direction": "Direction de wilaya",
     "ministry": "Ministère"
   },
   "home": {
@@ -51,7 +68,6 @@
     "cta_login": "Se connecter",
     "cta_signup": "Créer un compte",
     "cta_contact": "Nous contacter",
-
     "side_kicker": "Couverture nationale",
     "side_stat1_v": "~2 000",
     "side_stat1_l": "Établissements ciblés",
@@ -61,21 +77,19 @@
     "side_stat3_l": "Wilayas",
     "side_stat4_v": "fr · en · ar",
     "side_stat4_l": "Langues prises en charge",
-
     "roles_kicker": "Cinq rôles, une seule plateforme",
     "roles_title": "Du ministère à l'étudiant, une hiérarchie claire.",
     "roles_lede": "Chaque rôle voit exactement ce qu'il doit voir — la sécurité est appliquée jusqu'à la base de données (Row Level Security).",
-    "role_student":   "Étudiant",
+    "role_student": "Étudiant",
     "role_student_d": "Cours, présence, notes, examens, demandes de documents.",
-    "role_teacher":   "Professeur",
+    "role_teacher": "Professeur",
     "role_teacher_d": "Saisie des notes, gestion des examens, présence, supports de cours.",
-    "role_admin":     "Administration",
-    "role_admin_d":   "Utilisateurs, spécialités, matières, demandes de documents.",
+    "role_admin": "Administration",
+    "role_admin_d": "Utilisateurs, spécialités, matières, demandes de documents.",
     "role_direction": "Direction",
     "role_direction_d": "Supervision des instituts et centres de sa zone.",
-    "role_ministry":  "Ministère",
+    "role_ministry": "Ministère",
     "role_ministry_d": "Statistiques nationales, suivi des directions.",
-
     "feat_kicker": "Tout ce qu'il faut, rien de superflu",
     "feat_title": "Les briques métier essentielles.",
     "feat_courses_t": "Cours & supports",
@@ -90,7 +104,6 @@
     "feat_docs_d": "Demande étudiant → traitement admin → envoi par email automatisé.",
     "feat_rls_t": "Sécurité par défaut",
     "feat_rls_d": "Row Level Security PostgreSQL. Aucun rôle ne voit hors de son périmètre.",
-
     "cta_band_title": "Prêt à équiper votre établissement ?",
     "cta_band_lede": "Cursus est conçu pour être déployé tel quel. Configurez Supabase, branchez votre nom de domaine, et activez vos comptes."
   },

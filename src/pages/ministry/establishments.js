@@ -1,253 +1,346 @@
+// §5 — Gestion nationale des établissements de formation.
+// Les 10 types officiels, rattachement à une wilaya, directeur, compte
+// administrateur, statut, et création de comptes internes.
+
 import { h } from '../../lib/dom.js';
 import { t } from '../../lib/i18n.js';
-import { requireAuth } from '../../lib/auth.js';
-import { navigate } from '../../lib/router.js';
-import { AppShell } from '../../components/layout.js';
+import { protectedPage } from '../../lib/page.js';
 import { Card } from '../../components/card.js';
 import { Button } from '../../components/button.js';
-import { Field, Input, Select } from '../../components/input.js';
+import { Field, Input, Select, Textarea } from '../../components/input.js';
 import { Badge } from '../../components/badge.js';
-import { navFor, roleLabel, initialsOf } from '../../lib/nav.js';
-import { getSupabase } from '../../lib/supabase.js';
+import { DataTable } from '../../components/table.js';
+import { Modal, confirmDialog } from '../../components/modal.js';
 import { toast } from '../../components/toast.js';
-import { EmptyBlock, ErrorBlock } from '../../lib/page-helpers.js';
+import { StatusPill, SectionHead, Notice, fullName } from '../../lib/ui.js';
+import { ENTITY_STATUS, ESTABLISHMENT_TYPES, typeAbbr, typeLabel, typeOptions } from '../../lib/nomenclature.js';
+import {
+  listWilayas, listEstablishments, createEstablishment, updateEstablishment,
+  deleteEstablishment, listProfiles, createAccount,
+} from '../../lib/db.js';
 
-const ESTAB_TYPES = [
-  'cfpa', 'insfp', 'ifpm', 'iap', 'infs',
-  'paramedical', 'private', 'sectoral', 'excellence',
-  'distance', 'apprenticeship', 'higher_pro_school', 'other',
-];
+export async function ministryEstablishmentsPage(ctx = {}) {
+  const preselectWilaya = ctx.query?.get('wilaya') || '';
 
-export async function ministryEstablishmentsPage() {
-  const guard = requireAuth({ role: 'ministry' });
-  if (!guard.ok) { navigate(guard.redirect); return h('div'); }
-  const { profile } = guard.state;
-
-  const sb = getSupabase();
-  let all = [], directions = [], err = null;
-  if (sb) {
-    const [estabs, dirs] = await Promise.all([
-      sb.from('establishments')
-        .select('id, name, type, wilaya, contact_email, direction_id, directions(name)')
-        .order('name'),
-      sb.from('directions').select('id, name, wilaya').order('name'),
-    ]);
-    if (estabs.error) err = estabs.error;
-    else all = estabs.data || [];
-    if (!dirs.error) directions = dirs.data || [];
-  }
-
-  // ── Create form ───────────────────────────────────────────────────────────
-  const nameInput  = Input({ placeholder: 'INSFP de Tipaza' });
-  const typeAdd    = Select({ value: 'insfp', options: ESTAB_TYPES.map((v) => ({ value: v, label: v.toUpperCase() })) });
-  const wilayaAdd  = Input({ placeholder: '42 — Tipaza' });
-  const addressAdd = Input({ placeholder: 'Route nationale n°11, Tipaza' });
-  const emailAdd   = Input({ type: 'email', placeholder: 'contact@insfp-tipaza.dz' });
-  const phoneAdd   = Input({ type: 'tel', placeholder: '+213 …' });
-  const dirAdd     = Select({
-    value: '',
-    options: [
-      { value: '', label: '— sans direction de rattachement —' },
-      ...directions.map((d) => ({ value: d.id, label: `${d.name}${d.wilaya ? ' · ' + d.wilaya : ''}` })),
-    ],
-  });
-  const addBtn = Button({ label: 'Créer l’institut', icon: 'plus', variant: 'primary',
-    onClick: async () => {
-      if (!sb) return;
-      if (!nameInput.value.trim()) { toast('Le nom est requis.', { tone: 'warn' }); return; }
-      addBtn.disabled = true;
-      const r = await sb.from('establishments').insert({
-        name: nameInput.value.trim(),
-        type: typeAdd.value,
-        wilaya: wilayaAdd.value.trim() || null,
-        address: addressAdd.value.trim() || null,
-        contact_email: emailAdd.value.trim() || null,
-        contact_phone: phoneAdd.value.trim() || null,
-        direction_id: dirAdd.value || null,
-      });
-      addBtn.disabled = false;
-      if (r.error) {
-        toast(r.error.message, { tone: 'danger' });
-      } else {
-        toast('Institut créé.', { tone: 'success' });
-        setTimeout(() => window.location.reload(), 500);
-      }
-    },
-  });
-
-  // ── "Create institute admin account" form ───────────────────────────────
-  const acctEstabSel = Select({
-    value: '',
-    options: [
-      { value: '', label: '— choisir un institut —' },
-      ...all.map((e) => ({ value: e.id, label: `${e.name}${e.wilaya ? ' · ' + e.wilaya : ''}` })),
-    ],
-  });
-  const acctFirst = Input({ placeholder: 'Ahmed' });
-  const acctLast  = Input({ placeholder: 'Khelifi' });
-  const acctEmail = Input({ type: 'email', placeholder: 'admin@insfp-tipaza.dz' });
-  const acctPhone = Input({ type: 'tel', placeholder: '+213 …' });
-  const acctPwd   = Input({ type: 'password', placeholder: '8 caractères min.' });
-  const createAcctBtn = Button({
-    label: 'Créer le compte', icon: 'user-plus', variant: 'primary',
-    onClick: async () => {
-      if (!sb) return;
-      if (!acctEstabSel.value) { toast('Choisissez un institut.', { tone: 'warn' }); return; }
-      if (!acctEmail.value.trim()) { toast('Email requis.', { tone: 'warn' }); return; }
-      if ((acctPwd.value || '').length < 8) { toast('Mot de passe : 8 caractères min.', { tone: 'warn' }); return; }
-      createAcctBtn.disabled = true;
-      const { data, error } = await sb.rpc('admin_create_user', {
-        p_email:            acctEmail.value.trim(),
-        p_password:         acctPwd.value,
-        p_role:             'admin',
-        p_first_name:       acctFirst.value.trim(),
-        p_last_name:        acctLast.value.trim(),
-        p_phone:            acctPhone.value.trim() || null,
-        p_establishment_id: acctEstabSel.value,
-      });
-      createAcctBtn.disabled = false;
-      if (error) {
-        toast(error.message, { tone: 'danger' });
-      } else {
-        toast(`Compte créé — ${acctEmail.value.trim()}`, { tone: 'success' });
-        acctFirst.value = ''; acctLast.value = '';
-        acctEmail.value = ''; acctPhone.value = '';
-        acctPwd.value = '';
-        acctEstabSel.value = '';
-      }
-    },
-  });
-
-  // ── Filter UI ─────────────────────────────────────────────────────────────
-  const searchInput = Input({ placeholder: 'Rechercher par nom, wilaya…' });
-  const typeSel = Select({ value: '', options: [
-    { value: '', label: 'Tous les types' },
-    ...ESTAB_TYPES.map((v) => ({ value: v, label: v.toUpperCase() })),
-  ]});
-  const tableMount = h('div');
-
-  function render() {
-    const q = searchInput.value.toLowerCase().trim();
-    const list = all.filter((e) =>
-      (!q || (e.name || '').toLowerCase().includes(q) || (e.wilaya || '').toLowerCase().includes(q))
-      && (!typeSel.value || e.type === typeSel.value)
-    );
-    tableMount.replaceChildren();
-    tableMount.appendChild(Card({ padding: 0 }, [
-      h('div', { style: { padding: '12px 20px', borderBottom: '1px solid var(--c-line-soft)', fontSize: 13 } }, [
-        h('span', { class: 'mono mute' }, [`${list.length} résultat${list.length > 1 ? 's' : ''}`]),
-      ]),
-      list.length === 0
-        ? EmptyBlock('Aucun résultat.', 'building')
-        : h('table.table', {}, [
-            h('thead', {}, [h('tr', {}, [
-              h('th', {}, ['Nom']), h('th', {}, ['Type']), h('th', {}, ['Wilaya']),
-              h('th', {}, ['Direction']), h('th', {}, ['Contact']),
-            ])]),
-            h('tbody', {}, list.map((e) => h('tr', {}, [
-              h('td', { style: { fontWeight: 500 } }, [e.name]),
-              h('td', {}, [Badge({ tone: 'outline' }, [(e.type || '').toUpperCase()])]),
-              h('td', { class: 'mono small mute' }, [e.wilaya || '—']),
-              h('td', {}, [e.directions?.name || h('span.mute', {}, ['—'])]),
-              h('td', { class: 'mono small' }, [e.contact_email || '—']),
-            ]))),
-          ]),
-    ]));
-  }
-  searchInput.addEventListener('input', render);
-  typeSel.addEventListener('change', render);
-  render();
-
-  const children = [
-    err && ErrorBlock(err),
-
-    // Create form
-    Card({ padding: 20 }, [
-      h('h3.card__title', { style: { marginBottom: 12 } }, ['Nouvel institut / établissement']),
-      h('div', {
-        style: {
-          display: 'grid',
-          gridTemplateColumns: '2fr 1fr 1fr 2fr',
-          gap: 'var(--s-3)',
-        },
-      }, [
-        Field({ label: 'Nom', required: true, children: nameInput }),
-        Field({ label: 'Type', children: typeAdd }),
-        Field({ label: 'Wilaya', children: wilayaAdd }),
-        Field({ label: 'Direction de rattachement', children: dirAdd }),
-      ]),
-      h('div', {
-        style: {
-          display: 'grid',
-          gridTemplateColumns: '2fr 1.5fr 1fr auto',
-          gap: 'var(--s-3)',
-          alignItems: 'end',
-          marginTop: 'var(--s-3)',
-        },
-      }, [
-        Field({ label: 'Adresse', children: addressAdd }),
-        Field({ label: 'Email', children: emailAdd }),
-        Field({ label: 'Téléphone', children: phoneAdd }),
-        addBtn,
-      ]),
-    ]),
-
-    // Create institute administrator account
-    h('div', { style: { marginTop: 'var(--s-4)' } }, [
-      Card({ padding: 20 }, [
-        h('h3.card__title', { style: { marginBottom: 4 } }, ["Créer un compte administrateur d'institut"]),
-        h('p', { class: 'small mute', style: { marginBottom: 12 } }, [
-          'Le compte est activé immédiatement. La personne pourra se connecter avec l’email + mot de passe ci-dessous et gérer son institut.',
-        ]),
-        h('div', {
-          style: {
-            display: 'grid',
-            gridTemplateColumns: '2fr 1fr 1fr',
-            gap: 'var(--s-3)',
-            marginBottom: 'var(--s-3)',
-          },
-        }, [
-          Field({ label: 'Institut', required: true, children: acctEstabSel }),
-          Field({ label: 'Prénom', children: acctFirst }),
-          Field({ label: 'Nom', children: acctLast }),
-        ]),
-        h('div', {
-          style: {
-            display: 'grid',
-            gridTemplateColumns: '2fr 1.5fr 1.5fr auto',
-            gap: 'var(--s-3)',
-            alignItems: 'end',
-          },
-        }, [
-          Field({ label: 'Email', required: true, children: acctEmail }),
-          Field({ label: 'Téléphone', children: acctPhone }),
-          Field({ label: 'Mot de passe', required: true, children: acctPwd }),
-          createAcctBtn,
-        ]),
-      ]),
-    ]),
-
-    // Filters
-    h('div', { style: { marginTop: 'var(--s-4)' } }, [
-      Card({ padding: 16 }, [
-        h('div', { style: { display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--s-3)' } }, [
-          Field({ label: 'Recherche', children: searchInput }),
-          Field({ label: 'Type', children: typeSel }),
-        ]),
-      ]),
-    ]),
-
-    // Table
-    h('div', { style: { marginTop: 'var(--s-4)' } }, [tableMount]),
-  ].filter(Boolean);
-
-  return AppShell({
-    nav: navFor('ministry'),
-    active: t('nav.establishments'),
-    role: roleLabel('ministry'),
-    user: { name: `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim(), initials: initialsOf(profile) },
+  return protectedPage({
+    role: 'ministry',
     title: 'Établissements',
     breadcrumb: 'Ministère · Établissements',
-    children,
+    active: t('nav.establishments'),
+    build: async () => {
+      const [wilayas, estabs, admins] = await Promise.all([
+        listWilayas(),
+        listEstablishments(),
+        listProfiles({ role: 'admin' }),
+      ]);
+
+      const adminsByEstab = new Map();
+      for (const a of admins) {
+        if (!a.establishment_id) continue;
+        const arr = adminsByEstab.get(a.establishment_id) || [];
+        arr.push(a);
+        adminsByEstab.set(a.establishment_id, arr);
+      }
+
+      const wilayaOptions = (empty = '— choisir une wilaya —') => [
+        { value: '', label: empty },
+        ...wilayas.map((w) => ({ value: w.id, label: `${w.code} — ${w.name}` })),
+      ];
+
+      const reload = () => window.location.reload();
+
+      // ── Création ────────────────────────────────────────────────────────
+      function openCreate() {
+        if (wilayas.length === 0) {
+          toast('Créez d’abord au moins une wilaya.', { tone: 'warn' });
+          return;
+        }
+        const name    = Input({ placeholder: 'INSFP de Batna' });
+        const code    = Input({ placeholder: 'INSFP-05-01' });
+        const type    = Select({ value: 'insfp', options: typeOptions() });
+        const wilaya  = Select({ value: preselectWilaya, options: wilayaOptions() });
+        const address = Textarea({ rows: 2, placeholder: 'Adresse complète' });
+        const director = Input({ placeholder: 'Nom du directeur' });
+        const email   = Input({ type: 'email', placeholder: 'contact@etablissement.dz' });
+        const phone   = Input({ type: 'tel', placeholder: '+213 …' });
+
+        const aFirst = Input({ placeholder: 'Prénom' });
+        const aLast  = Input({ placeholder: 'Nom' });
+        const aEmail = Input({ type: 'email', placeholder: 'admin@etablissement.dz' });
+        const aPwd   = Input({ type: 'password', placeholder: '8 caractères minimum' });
+
+        const save   = Button({ label: "Créer l'établissement", icon: 'plus', variant: 'primary' });
+        const cancel = Button({ label: 'Annuler', variant: 'secondary' });
+
+        const m = Modal({
+          title: 'Nouvel établissement de formation',
+          subtitle: 'Le compte administrateur est facultatif et peut être ajouté plus tard.',
+          size: 'lg',
+          children: [
+            h('div.form-grid--2.form-grid', {}, [
+              Field({ label: 'Nom', required: true, children: name }),
+              Field({ label: 'Code établissement', children: code }),
+            ]),
+            Field({ label: 'Type', required: true, children: type }),
+            h('div.form-grid--2.form-grid', {}, [
+              Field({ label: 'Wilaya', required: true, children: wilaya }),
+              Field({ label: 'Directeur', children: director }),
+            ]),
+            Field({ label: 'Adresse', children: address }),
+            h('div.form-grid--2.form-grid', {}, [
+              Field({ label: 'Email', children: email }),
+              Field({ label: 'Téléphone', children: phone }),
+            ]),
+            h('hr', { style: { border: 0, borderTop: '1px solid var(--c-line-soft)', margin: '4px 0' } }),
+            h('h3.card__title', {}, ["Compte administrateur de l'établissement"]),
+            h('div.form-grid', {}, [
+              Field({ label: 'Prénom', children: aFirst }),
+              Field({ label: 'Nom', children: aLast }),
+            ]),
+            h('div.form-grid--2.form-grid', {}, [
+              Field({ label: 'Email de connexion', children: aEmail }),
+              Field({ label: 'Mot de passe', children: aPwd, hint: '8 caractères minimum' }),
+            ]),
+          ],
+          actions: [cancel, save],
+        });
+
+        cancel.addEventListener('click', () => m.close());
+        save.addEventListener('click', async () => {
+          if (!name.value.trim())  { toast('Le nom est requis.', { tone: 'warn' }); return; }
+          if (!wilaya.value)       { toast('La wilaya est requise.', { tone: 'warn' }); return; }
+          const wantsAdmin = !!aEmail.value.trim();
+          if (wantsAdmin && aPwd.value.length < 8) {
+            toast('Mot de passe : 8 caractères minimum.', { tone: 'warn' }); return;
+          }
+          save.disabled = true;
+          try {
+            const created = await createEstablishment({
+              name: name.value.trim(),
+              code: code.value.trim() || null,
+              type: type.value,
+              wilaya_id: wilaya.value,
+              address: address.value.trim() || null,
+              director_name: director.value.trim() || null,
+              contact_email: email.value.trim() || null,
+              contact_phone: phone.value.trim() || null,
+            });
+            if (wantsAdmin && created) {
+              await createAccount({
+                p_email: aEmail.value.trim(),
+                p_password: aPwd.value,
+                p_role: 'admin',
+                p_first_name: aFirst.value.trim(),
+                p_last_name: aLast.value.trim(),
+                p_establishment_id: created.id,
+                p_wilaya_id: wilaya.value,
+              });
+            }
+            toast('Établissement créé.', { tone: 'success' });
+            m.close();
+            reload();
+          } catch (err) {
+            save.disabled = false;
+            toast(err.message || 'Création impossible.', { tone: 'danger' });
+          }
+        });
+
+        m.open();
+      }
+
+      // ── Édition ─────────────────────────────────────────────────────────
+      function openEdit(e) {
+        const name    = Input({ value: e.name || '' });
+        const code    = Input({ value: e.code || '' });
+        const type    = Select({ value: e.type, options: typeOptions() });
+        const wilaya  = Select({ value: e.wilaya_id || '', options: wilayaOptions() });
+        const address = Textarea({ rows: 2, value: e.address || '' });
+        const director = Input({ value: e.director_name || '' });
+        const email   = Input({ type: 'email', value: e.contact_email || '' });
+        const phone   = Input({ type: 'tel', value: e.contact_phone || '' });
+        const status  = Select({
+          value: e.status,
+          options: Object.entries(ENTITY_STATUS).map(([v, m]) => ({ value: v, label: m.label })),
+        });
+
+        const staff = adminsByEstab.get(e.id) || [];
+
+        const save   = Button({ label: 'Enregistrer', icon: 'save', variant: 'primary' });
+        const cancel = Button({ label: 'Fermer', variant: 'secondary' });
+        const del    = Button({ label: 'Supprimer', icon: 'trash', variant: 'danger' });
+
+        const m = Modal({
+          title: e.name,
+          subtitle: `${typeAbbr(e.type)} · ${e.wilayas ? `${e.wilayas.code} — ${e.wilayas.name}` : 'wilaya non définie'}`,
+          size: 'lg',
+          children: [
+            h('div', {}, [
+              h('div.kpi__label', {}, ['Comptes administrateurs']),
+              staff.length
+                ? h('ul', { style: { margin: '6px 0 0', paddingInlineStart: '18px' } },
+                    staff.map((s) => h('li', { style: { fontSize: 13 } }, [
+                      `${fullName(s)} — `,
+                      h('span.mono.small.mute', {}, [s.email]),
+                    ])))
+                : h('p.small.mute', { style: { marginTop: 4 } }, [
+                    'Aucun compte administrateur. Créez-le depuis « Comptes ».',
+                  ]),
+            ]),
+            h('hr', { style: { border: 0, borderTop: '1px solid var(--c-line-soft)' } }),
+            h('div.form-grid--2.form-grid', {}, [
+              Field({ label: 'Nom', required: true, children: name }),
+              Field({ label: 'Code', children: code }),
+            ]),
+            Field({ label: 'Type', children: type }),
+            h('div.form-grid', {}, [
+              Field({ label: 'Wilaya', children: wilaya }),
+              Field({ label: 'Directeur', children: director }),
+              Field({ label: 'Statut', children: status }),
+            ]),
+            Field({ label: 'Adresse', children: address }),
+            h('div.form-grid--2.form-grid', {}, [
+              Field({ label: 'Email', children: email }),
+              Field({ label: 'Téléphone', children: phone }),
+            ]),
+          ],
+          actions: [del, cancel, save],
+        });
+
+        cancel.addEventListener('click', () => m.close());
+
+        save.addEventListener('click', async () => {
+          save.disabled = true;
+          try {
+            await updateEstablishment(e.id, {
+              name: name.value.trim(),
+              code: code.value.trim() || null,
+              type: type.value,
+              wilaya_id: wilaya.value || null,
+              address: address.value.trim() || null,
+              director_name: director.value.trim() || null,
+              contact_email: email.value.trim() || null,
+              contact_phone: phone.value.trim() || null,
+              status: status.value,
+            });
+            toast('Établissement mis à jour.', { tone: 'success' });
+            m.close();
+            reload();
+          } catch (err) {
+            save.disabled = false;
+            toast(err.message || 'Mise à jour impossible.', { tone: 'danger' });
+          }
+        });
+
+        del.addEventListener('click', async () => {
+          const ok = await confirmDialog({
+            title: "Supprimer l'établissement",
+            message: `« ${e.name} » et toutes ses spécialités, classes et matières seront supprimées. `
+              + 'Les comptes rattachés seront détachés.',
+            confirmLabel: 'Supprimer', danger: true,
+          });
+          if (!ok) return;
+          try {
+            await deleteEstablishment(e.id);
+            toast('Établissement supprimé.', { tone: 'success' });
+            m.close();
+            reload();
+          } catch (err) {
+            toast(err.message || 'Suppression impossible.', { tone: 'danger' });
+          }
+        });
+
+        m.open();
+      }
+
+      // ── Répartition par type ───────────────────────────────────────────
+      const byType = ESTABLISHMENT_TYPES
+        .map((t) => ({ ...t, n: estabs.filter((e) => e.type === t.value).length }))
+        .filter((t) => t.n > 0);
+
+      const table = DataTable({
+        rows: estabs,
+        exportName: 'etablissements',
+        searchPlaceholder: 'Nom, code, wilaya, directeur…',
+        empty: 'Aucun établissement enregistré.',
+        emptyIcon: 'building',
+        search: (r, q) =>
+          [r.name, r.code, r.director_name, r.contact_email, r.wilayas?.name, r.wilayas?.code,
+           typeAbbr(r.type)]
+            .some((v) => String(v ?? '').toLowerCase().includes(q)),
+        filters: [
+          {
+            key: 'wilaya_id', label: 'Wilaya', value: (r) => r.wilaya_id || '',
+            options: wilayaOptions('Toutes les wilayas'),
+          },
+          {
+            key: 'type', label: 'Type', value: (r) => r.type,
+            options: typeOptions('Tous les types'),
+          },
+          {
+            key: 'status', label: 'Statut', value: (r) => r.status,
+            options: [{ value: '', label: 'Tous' },
+              ...Object.entries(ENTITY_STATUS).map(([v, mm]) => ({ value: v, label: mm.label }))],
+          },
+        ],
+        columns: [
+          { key: 'name', label: 'Établissement', value: (r) => r.name,
+            render: (r) => h('div', {}, [
+              h('div', { style: { fontWeight: 500 } }, [r.name]),
+              r.code && h('div.mono.small.mute', {}, [r.code]),
+            ].filter(Boolean)) },
+          { key: 'type', label: 'Type', value: (r) => typeAbbr(r.type),
+            render: (r) => Badge({ tone: 'outline', size: 'sm' }, [typeAbbr(r.type)]) },
+          { key: 'wilaya', label: 'Wilaya', value: (r) => r.wilayas ? `${r.wilayas.code} — ${r.wilayas.name}` : '—',
+            sortValue: (r) => r.wilayas?.code || '' },
+          { key: 'director_name', label: 'Directeur', value: (r) => r.director_name || '—' },
+          { key: 'admins', label: 'Comptes', align: 'right', sortable: false,
+            value: (r) => (adminsByEstab.get(r.id) || []).length,
+            render: (r) => {
+              const n = (adminsByEstab.get(r.id) || []).length;
+              return n
+                ? h('span.mono', {}, [String(n)])
+                : Badge({ tone: 'warn', size: 'sm' }, ['aucun']);
+            } },
+          { key: 'contact_email', label: 'Contact', value: (r) => r.contact_email || '—',
+            render: (r) => h('span.mono.small', {}, [r.contact_email || '—']) },
+          { key: 'status', label: 'Statut', value: (r) => ENTITY_STATUS[r.status]?.label,
+            render: (r) => StatusPill(ENTITY_STATUS, r.status) },
+        ],
+        onRow: openEdit,
+      });
+
+      return [
+        SectionHead(
+          'Établissements de formation',
+          `${estabs.length} établissement${estabs.length > 1 ? 's' : ''} · `
+          + `${wilayas.length} wilaya${wilayas.length > 1 ? 's' : ''}`,
+          Button({ label: 'Nouvel établissement', icon: 'plus', variant: 'primary', onClick: openCreate })
+        ),
+
+        wilayas.length === 0
+          ? Notice({ tone: 'warn', title: 'Aucune wilaya' }, [
+              'Un établissement doit être rattaché à une wilaya. Créez-en une depuis la page Wilayas.',
+            ])
+          : null,
+
+        byType.length > 0 && Card({ padding: 16 }, [
+          h('div.kpi__label', { style: { marginBottom: 10 } }, ['Répartition par type']),
+          h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '8px' } },
+            byType.map((t) => h('span', {
+              style: {
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                border: '1px solid var(--c-line)', borderRadius: '999px',
+                padding: '4px 10px', fontSize: '12px',
+              },
+              title: t.label,
+            }, [
+              h('strong', {}, [t.abbr]),
+              h('span.mono.mute', {}, [String(t.n)]),
+            ]))),
+        ]),
+
+        table,
+      ].filter(Boolean);
+    },
   });
 }

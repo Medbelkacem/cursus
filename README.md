@@ -2,13 +2,23 @@
 
 **Plateforme nationale de gestion et de suivi des instituts et centres de formation en Algérie.**
 
-Une seule plateforme pour cinq rôles hiérarchisés :
+Une seule plateforme pour cinq niveaux hiérarchisés :
 
 ```
-Ministère  →  Direction  →  Établissement (Admin)  →  Professeur  →  Étudiant
+Ministère  →  Wilayas / Directions  →  Établissements  →  Professeurs  →  Étudiants
+                                    →  Classes & spécialités
+                                    →  Semestres S1 → S5
+                                    →  Contrats d'apprentissage & stages
 ```
 
-Cible : ~2 000 établissements (CFPA, INSFP, IFPM, IAP, INFS, Instituts paramédicaux, centres privés, écoles spécialisées, centres sectoriels et d'excellence, formation à distance, apprentissage, écoles supérieures professionnelles, perfectionnement).
+Les 10 types d'établissement officiels sont pris en charge : **INSFP, IEP, CFPA, CFPHP,
+Centre d'Excellence, INFEP, IFEP, CNEPD, INDEFOC, EPFP**.
+
+> **La plateforme démarre entièrement vide.** Aucune wilaya, aucun établissement,
+> aucun programme, aucun étudiant, aucune statistique n'est pré-rempli : toute la
+> structure est créée par le ministère depuis l'interface d'administration.
+> Voir [CAHIER-DES-CHARGES.md](CAHIER-DES-CHARGES.md) pour la couverture détaillée
+> et l'ordre de mise en route.
 
 ---
 
@@ -22,7 +32,8 @@ Cible : ~2 000 établissements (CFPA, INSFP, IFPM, IAP, INFS, Instituts paraméd
 | Thèmes | Clair / sombre via `data-theme` et variables CSS |
 | Backend | **Supabase** (PostgreSQL + Auth + Row Level Security + Storage) |
 | Email | Supabase **Edge Function** + **Resend** |
-| Hébergement | **Netlify** (build statique + SPA fallback configuré dans `netlify.toml`) |
+| Hébergement | **Vercel** (`vercel.json`) — Netlify également configuré (`netlify.toml`) |
+| Tests | Migrations vérifiées sur PostgreSQL 16 · harnais de rendu Chromium headless (`.smoke/`) |
 
 ---
 
@@ -156,3 +167,85 @@ Le site s'ouvre sur **http://localhost:5173** avec la page d'accueil (sélecteur
 ## Licence
 
 Propriétaire — usage réservé aux établissements de formation en Algérie. Toute redistribution requiert un accord écrit.
+
+---
+
+## Fonctionnalités par rôle
+
+### Ministère — niveau national
+Wilayas et comptes de direction · établissements (10 types) · filières · programmes de
+formation (structure S1→S5, modules, documents, publication) · modes de formation ·
+suivi national des étudiants · contrats d'apprentissage · stages S5 · règlement
+pédagogique · comptes et permissions · rapports PDF/CSV · annonces.
+
+### Direction de wilaya — périmètre wilaya
+Tableau de bord de la wilaya · établissements de la wilaya · étudiants · catalogue des
+programmes · contrats et stages · règlement de wilaya · comptes des établissements ·
+rapports. **Aucun accès aux données d'une autre wilaya** — restriction appliquée par les
+policies PostgreSQL, pas seulement par l'interface.
+
+### Établissement
+Tableau de bord · étudiants · spécialités, classes, sections et sessions · matières ·
+programmes · contrats et stages de ses étudiants · règlement d'établissement · comptes
+internes · demandes de documents · rapports.
+
+### Professeur
+Matières assignées · présence · notes · examens et TP · supports de cours · consultation
+des programmes nationaux.
+
+### Étudiant
+Tableau de bord · parcours S1→S5 (moyennes, rattrapages, crédits, assiduité) · programme
+de formation et documents · cours · présence · notes · examens · **dépôt du contrat
+d'apprentissage** · **dépôt de la convention de stage S5** · documents administratifs ·
+notifications.
+
+---
+
+## Moteur académique
+
+À chaque note saisie, la moyenne pondérée du semestre est recalculée en base et le statut
+est mis à jour :
+
+| Situation | Statut | Suite |
+| --- | --- | --- |
+| Moyenne ≥ seuil | **Validé** | Passage automatique au semestre suivant |
+| Moyenne < seuil | **Rattrapage à passer** | Notification à l'étudiant |
+| Rattrapage ≥ seuil | **Validé** | Passage automatique |
+| Rattrapage < seuil | **Rattrapage non validé** | Décision configurée : redoublement, maintien, exclusion ou examen au cas par cas |
+
+Les seuils, la progression automatique et la décision en cas d'échec proviennent tous de
+la table `academic_rules` : **aucune règle n'est codée en dur**, et sans configuration la
+plateforme n'applique jamais d'exclusion automatique.
+
+L'arrivée en **S5** déclenche l'exigence du stage pratique et la notification associée.
+
+---
+
+## Base de données
+
+12 migrations dans `supabase/migrations/` :
+
+| Fichier | Contenu |
+| --- | --- |
+| `20260101000000_schema` | Schéma de base (profils, établissements, matières, notes, examens) |
+| `20260101000100_functions` | Helpers RLS, trigger de création de profil |
+| `20260101000200_rls` | Policies de base |
+| `20260101000300_storage` | Buckets cours / copies / documents |
+| `20260524000000_admin_create_user` | Création de compte par le ministère (historique) |
+| `20260820000000_enum_extensions` | Les 10 types d'établissement officiels |
+| `20260820000100_national_structure` | Wilayas, modes, filières, programmes, classes, semestres, contrats, notifications, permissions, audit |
+| `20260820000200_academic_engine` | Moyennes, rattrapage, progression, règlement effectif, notifications |
+| `20260820000300_stats_rpc` | `stats_national` / `stats_wilaya` / `stats_establishment` / `student_overview` |
+| `20260820000400_rls_v2` | RLS des nouvelles tables |
+| `20260820000500_storage_v2` | Buckets contrats et curricula |
+| `20260820000600_accounts_v2` | Création hiérarchique de comptes, statuts, permissions, annonces |
+| `20260820000700_scope_hardening` | Cloisonnement strict des établissements + recherche multicritère |
+
+```bash
+npm run supabase:link
+npm run supabase:push
+```
+
+Le premier compte ministère se crée depuis le Studio Supabase (`role: 'ministry'` dans
+les métadonnées, statut `active`). Tous les autres comptes sont ensuite créés depuis
+l'interface.

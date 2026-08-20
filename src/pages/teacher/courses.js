@@ -96,7 +96,7 @@ export async function teacherCoursesPage() {
 
   return AppShell({
     nav: navFor('teacher'),
-    active: t('nav.courses'),
+    active: t('nav.materials'),
     role: roleLabel('teacher'),
     user: { name: `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim(), initials: initialsOf(profile) },
     title: 'Supports de cours',

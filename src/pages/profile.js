@@ -121,7 +121,7 @@ export async function profilePage() {
 
   return AppShell({
     nav: navFor(role),
-    active: t('common.profile'),
+    active: t('common.my_profile'),
     role: roleLabel(role),
     user: { name: `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim(), initials: initialsOf(profile) },
     title: 'Mon profil',

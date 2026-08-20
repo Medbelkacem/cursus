@@ -1,203 +1,208 @@
-// Tableau de bord étudiant.
-// Rapproche : taux de présence, dernières notes, prochain examen, demandes en attente.
+// §15 — Espace étudiant : informations personnelles, progression, dossiers.
 
 import { h } from '../../lib/dom.js';
 import { t } from '../../lib/i18n.js';
-import { requireAuth, getState } from '../../lib/auth.js';
-import { navigate } from '../../lib/router.js';
-import { AppShell } from '../../components/layout.js';
-import { Card, CardHeader } from '../../components/card.js';
-import { Badge } from '../../components/badge.js';
+import { protectedPage } from '../../lib/page.js';
+import { Card } from '../../components/card.js';
 import { Button } from '../../components/button.js';
-import { Icon } from '../../components/icon.js';
-import { Zellige } from '../../components/zellige.js';
-import { navFor, roleLabel, initialsOf } from '../../lib/nav.js';
-import { getSupabase } from '../../lib/supabase.js';
+import { Badge } from '../../components/badge.js';
+import {
+  KPIGrid, SectionHead, Notice, SemesterStepper, StatusPill, fmtPct, fullName,
+} from '../../lib/ui.js';
+import {
+  SEMESTER_STATUS, ENROLLMENT_STATUS, CONTRACT_STATUS, semLabel, typeLabel,
+} from '../../lib/nomenclature.js';
+import { EmptyBlock, fmtDate, fmtDateTime } from '../../lib/page-helpers.js';
+import { studentOverview, listNotifications } from '../../lib/db.js';
 
 export async function studentDashboard() {
-  const guard = requireAuth({ role: 'student' });
-  if (!guard.ok) { navigate(guard.redirect); return h('div'); }
-  const { profile, user } = guard.state;
-
-  // ── Charger les données du dashboard ─────────────────────────────────
-  const sb = getSupabase();
-  const dataPromise = sb ? (async () => {
-    const [recent, atts, exams, docs] = await Promise.all([
-      sb.from('grades').select('id, value, type, label, graded_at, subject_id, subjects(name, coefficient)')
-        .eq('student_id', user.id).order('graded_at', { ascending: false }).limit(5),
-      sb.rpc('student_attendance_rate', { target: user.id }),
-      sb.from('exams').select('id, title, kind, start_at, end_at, subject_id, subjects(name)')
-        .gt('start_at', new Date().toISOString()).order('start_at').limit(3),
-      sb.from('document_requests').select('id, document_type, status, requested_at')
-        .eq('student_id', user.id).order('requested_at', { ascending: false }).limit(3),
-    ]);
-    let overall = null;
-    const overallRes = await sb.rpc('student_overall_average', { target: user.id });
-    if (!overallRes.error) overall = overallRes.data;
-    return {
-      recentGrades: recent.data || [],
-      attendanceRate: atts.error ? null : atts.data,
-      nextExams: exams.data || [],
-      docs: docs.data || [],
-      overall,
-    };
-  })() : Promise.resolve({ recentGrades: [], attendanceRate: null, nextExams: [], docs: [], overall: null });
-
-  const data = await dataPromise;
-
-  // ── Composer le rendu ────────────────────────────────────────────────
-  const greeting = profile?.first_name
-    ? `Bonjour, ${profile.first_name}`
-    : 'Bienvenue';
-
-  const nextExam = data.nextExams[0];
-  const heroCard = nextExam ? nextExamCard(nextExam) : welcomeCard();
-
-  const content = [
-    // KPIs
-    h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--s-3)' } }, [
-      kpiCard(t('home.feat_grades_t'), data.overall != null ? data.overall.toString() : '—', '/20', data.overall != null && data.overall >= 10 ? 'kpi__trend--up' : null),
-      kpiCard(t('home.feat_attendance_t'), data.attendanceRate != null ? data.attendanceRate.toString() : '—', '%', null),
-      kpiCard(t('nav.exams'), String(data.nextExams.length), '', null),
-      kpiCard(t('nav.documents'), String(data.docs.filter((d) => d.status === 'pending').length), '', null, 'en attente'),
-    ]),
-
-    // Grid : hero + dernières notes
-    h('div', { style: { display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 'var(--s-4)', marginTop: 'var(--s-4)' } }, [
-      heroCard,
-
-      Card({ padding: 20 }, [
-        h('div.card__head', {}, [
-          h('div', {}, [h('h3.card__title', {}, [t('home.feat_grades_t')])]),
-          h('a', { href: '/etudiant/notes', 'data-link': '', class: 'mono small', style: { color: 'var(--c-gauloise-d)' } }, ['Voir tout →']),
-        ]),
-        data.recentGrades.length === 0
-          ? emptyBlock('Aucune note pour l\'instant.')
-          : h('div', {},
-              data.recentGrades.map((g, i) => h('div', {
-                style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderTop: i ? '1px solid var(--c-line-soft)' : 'none' },
-              }, [
-                h('div', {}, [
-                  h('div', { style: { fontSize: 13, fontWeight: 500 } }, [`${g.subjects?.name || '—'} · ${gradeTypeLabel(g.type)}`]),
-                  h('div', { class: 'mono small mute' }, [`${g.label || ''}${g.graded_at ? ' · ' + new Date(g.graded_at).toLocaleDateString('fr-FR') : ''}`]),
-                ]),
-                gradeChip(g.value),
-              ]))
-            ),
-      ]),
-    ]),
-
-    // Demandes de documents récentes
-    h('div', { style: { marginTop: 'var(--s-4)' } }, [
-      Card({ padding: 0 }, [
-        h('div', { style: { padding: '16px 20px', borderBottom: '1px solid var(--c-line-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } }, [
-          h('h3.card__title', {}, [t('nav.documents')]),
-          Button({ label: 'Nouvelle demande', icon: 'plus', size: 'sm', variant: 'primary', href: '/etudiant/documents', 'data-link': true }),
-        ]),
-        data.docs.length === 0
-          ? emptyBlock('Aucune demande envoyée.')
-          : h('table.table', {}, [
-              h('thead', {}, [h('tr', {}, [
-                h('th', {}, ['Document']),
-                h('th', {}, ['Date de demande']),
-                h('th', {}, ['Statut']),
-              ])]),
-              h('tbody', {}, data.docs.map((d) => h('tr', {}, [
-                h('td', {}, [docTypeLabel(d.document_type)]),
-                h('td', { class: 'mono small mute' }, [new Date(d.requested_at).toLocaleDateString('fr-FR')]),
-                h('td', {}, [docStatusBadge(d.status)]),
-              ]))),
-            ]),
-      ]),
-    ]),
-  ];
-
-  return AppShell({
-    nav: navFor('student'),
+  return protectedPage({
+    role: 'student',
+    title: 'Mon espace',
+    breadcrumb: 'Étudiant · Tableau de bord',
     active: t('nav.dashboard'),
-    role: roleLabel('student'),
-    user: { name: `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim(), initials: initialsOf(profile) },
-    title: greeting,
-    breadcrumb: 'Étudiant · ' + (profile?.email || ''),
-    children: content,
+    build: async ({ profile }) => {
+      const [overview, notifs] = await Promise.all([
+        studentOverview().catch(() => null),
+        listNotifications(6).catch(() => []),
+      ]);
+
+      const s = overview?.student || null;
+      const semesters = overview?.semesters || [];
+      const contracts = overview?.contracts || [];
+      const rule = overview?.rule || null;
+
+      if (!s) {
+        return [
+          Notice({ tone: 'warn', title: 'Dossier étudiant incomplet' }, [
+            'Votre compte n’est pas encore rattaché à un établissement et à une spécialité. '
+            + 'Contactez l’administration de votre établissement.',
+          ]),
+        ];
+      }
+
+      const currentSem = semesters.find((x) => x.semester === s.current_semester) || null;
+      const validated = semesters.filter((x) => x.status === 'validated').length;
+      const apprenticeship = contracts.find((c) => c.kind === 'apprenticeship') || null;
+      const internship = contracts.find((c) => c.kind === 'internship') || null;
+
+      const needsApprenticeship = !!s.requires_contract && !apprenticeship;
+      const needsInternship = s.current_semester === 's5' && !internship;
+
+      const infoRows = [
+        ['Établissement', s.establishment],
+        ['Type', s.establishment_type ? typeLabel(s.establishment_type) : null],
+        ['Wilaya', s.wilaya],
+        ['Programme', s.program],
+        ['Spécialité', s.specialty],
+        ['Mode de formation', s.training_mode],
+        ['Classe', s.group],
+        ['N° étudiant', s.student_number],
+        ['Inscrit depuis', s.enrollment_date ? fmtDate(s.enrollment_date) : null],
+      ].filter(([, v]) => v);
+
+      return [
+        // ── Identité ──────────────────────────────────────────────────────
+        Card({ padding: 20, accent: true }, [
+          h('div', { style: { display: 'flex', justifyContent: 'space-between', gap: '16px',
+                              flexWrap: 'wrap', alignItems: 'flex-start' } }, [
+            h('div', {}, [
+              h('div.kpi__label', {}, ['Étudiant']),
+              h('div', { style: { fontSize: '19px', fontWeight: 700, marginTop: '2px' } }, [
+                fullName({ first_name: s.first_name, last_name: s.last_name, email: s.email }),
+              ]),
+              h('div.small.mute', {}, [s.email || '']),
+            ]),
+            h('div', { style: { display: 'flex', gap: '6px', flexWrap: 'wrap' } }, [
+              StatusPill(ENROLLMENT_STATUS, s.enrollment_status),
+              Badge({ tone: 'outline', size: 'sm' }, [`Semestre ${semLabel(s.current_semester)}`]),
+            ]),
+          ]),
+          h('dl', {
+            style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                     gap: '12px 18px', margin: '16px 0 0' },
+          }, infoRows.map(([k, v]) => h('div', {}, [
+            h('dt.kpi__label', {}, [k]),
+            h('dd', { style: { margin: '2px 0 0', fontSize: '13px', fontWeight: 500 } }, [v]),
+          ]))),
+        ]),
+
+        // ── Alertes d'action ──────────────────────────────────────────────
+        needsApprenticeship && Notice({ tone: 'warn', title: "Contrat d'apprentissage à déposer" }, [
+          h('span', {}, ['Votre mode de formation impose le dépôt d’un contrat signé. ']),
+          h('a', { href: '/etudiant/apprentissage', 'data-link': '',
+                   style: { fontWeight: 600, color: 'inherit' } }, ['Déposer maintenant →']),
+        ]),
+        needsInternship && Notice({ tone: 'warn', title: 'Stage pratique S5 à déposer' }, [
+          h('span', {}, ['Le semestre S5 comporte un stage pratique obligatoire. ']),
+          h('a', { href: '/etudiant/stage', 'data-link': '',
+                   style: { fontWeight: 600, color: 'inherit' } }, ['Déposer ma convention →']),
+        ]),
+        currentSem?.status === 'pending_resit' && Notice({
+          tone: 'warn', title: `Rattrapage — semestre ${semLabel(currentSem.semester)}`,
+        }, [
+          `Votre moyenne est de ${Number(currentSem.average).toFixed(2)}/20, en dessous du seuil `
+          + `de ${rule ? Number(rule.pass_mark).toFixed(2) : '10.00'}/20. Un examen de rattrapage est requis.`,
+        ]),
+        currentSem?.status === 'resit_failed' && Notice({
+          tone: 'danger', title: 'Rattrapage non validé',
+        }, [
+          'Votre situation est en cours d’examen par l’administration de votre établissement.',
+        ]),
+
+        // ── Indicateurs ───────────────────────────────────────────────────
+        KPIGrid([
+          { label: 'Semestre en cours', value: semLabel(s.current_semester),
+            sub: currentSem ? SEMESTER_STATUS[currentSem.status]?.label : 'non démarré' },
+          { label: 'Moyenne du semestre',
+            value: currentSem?.final_average != null
+              ? Number(currentSem.final_average).toFixed(2)
+              : currentSem?.average != null ? Number(currentSem.average).toFixed(2) : '—',
+            suffix: '/20' },
+          { label: 'Semestres validés', value: `${validated} / 5` },
+          { label: 'Assiduité', value: fmtPct(currentSem?.attendance_rate) },
+          { label: 'Crédits obtenus',
+            value: semesters.reduce((n, x) => n + (x.credits_earned || 0), 0) },
+        ]),
+
+        // ── Parcours ──────────────────────────────────────────────────────
+        h('div', {}, [
+          SectionHead('Progression S1 → S5', 'Moyennes et validation de chaque semestre',
+            Button({ label: 'Détail du parcours', icon: 'arrow-right', variant: 'ghost', size: 'sm',
+                     href: '/etudiant/parcours' })),
+          SemesterStepper(semesters, s.current_semester),
+        ]),
+
+        // ── Dossiers ──────────────────────────────────────────────────────
+        h('div', {}, [
+          SectionHead('Mes dossiers', 'Apprentissage et stage pratique'),
+          h('div', { style: { display: 'grid', gap: 'var(--s-3)',
+                              gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' } }, [
+            Card({ padding: 18 }, [
+              h('h3.card__title', {}, ["Contrat d'apprentissage"]),
+              apprenticeship
+                ? h('div', { style: { marginTop: 10 } }, [
+                    h('div', { style: { fontSize: '13px', fontWeight: 500 } }, [apprenticeship.company_name]),
+                    h('div.small.mute', { style: { marginBottom: 8 } }, [
+                      [apprenticeship.start_date, apprenticeship.end_date]
+                        .filter(Boolean).map(fmtDate).join(' → ') || '—',
+                    ]),
+                    StatusPill(CONTRACT_STATUS, apprenticeship.status),
+                  ])
+                : h('p.small.mute', { style: { margin: '8px 0 12px' } }, [
+                    s.requires_contract ? 'Dossier obligatoire non déposé.' : 'Aucun dossier déposé.',
+                  ]),
+              h('div', { style: { marginTop: 12 } }, [
+                Button({ label: apprenticeship ? 'Consulter' : 'Déposer', icon: 'briefcase',
+                         variant: apprenticeship ? 'ghost' : 'secondary', size: 'sm',
+                         href: '/etudiant/apprentissage' }),
+              ]),
+            ]),
+            Card({ padding: 18 }, [
+              h('h3.card__title', {}, ['Stage pratique S5']),
+              internship
+                ? h('div', { style: { marginTop: 10 } }, [
+                    h('div', { style: { fontSize: '13px', fontWeight: 500 } }, [internship.company_name]),
+                    h('div.small.mute', { style: { marginBottom: 8 } }, [
+                      [internship.start_date, internship.end_date]
+                        .filter(Boolean).map(fmtDate).join(' → ') || '—',
+                    ]),
+                    StatusPill(CONTRACT_STATUS, internship.status),
+                  ])
+                : h('p.small.mute', { style: { margin: '8px 0 12px' } }, [
+                    s.current_semester === 's5'
+                      ? 'Convention obligatoire non déposée.'
+                      : 'Requis à partir du semestre S5.',
+                  ]),
+              h('div', { style: { marginTop: 12 } }, [
+                Button({ label: internship ? 'Consulter' : 'Déposer', icon: 'award',
+                         variant: internship ? 'ghost' : 'secondary', size: 'sm',
+                         href: '/etudiant/stage' }),
+              ]),
+            ]),
+          ]),
+        ]),
+
+        // ── Notifications récentes ───────────────────────────────────────
+        h('div', {}, [
+          SectionHead('Notifications récentes', null,
+            Button({ label: 'Tout voir', icon: 'arrow-right', variant: 'ghost', size: 'sm',
+                     href: '/notifications' })),
+          Card({ padding: 0 }, [
+            notifs.length === 0
+              ? EmptyBlock('Aucune notification.', 'bell')
+              : h('ul.notif-list', {}, notifs.map((n) => h('li', {
+                  class: `notif-item${n.read_at ? '' : ' notif-item--unread'}`,
+                }, [
+                  h('div', { style: { flex: '1 1 auto', minWidth: 0 } }, [
+                    h('div.notif-item__title', {}, [n.title]),
+                    n.body && h('div.notif-item__body', {}, [n.body]),
+                    h('div.notif-item__when', {}, [fmtDateTime(n.created_at)]),
+                  ].filter(Boolean)),
+                ]))),
+          ]),
+        ]),
+      ].filter(Boolean);
+    },
   });
-}
-
-// ── helpers locaux ─────────────────────────────────────────────────────────
-
-function kpiCard(label, value, suffix, trendCls, trendMsg) {
-  return Card({ padding: 0 }, [
-    h('div.kpi', {}, [
-      h('div.kpi__label', {}, [label]),
-      h('div.kpi__value', {}, [
-        h('span', {}, [value]),
-        suffix && h('span.kpi__value-sub', {}, [suffix]),
-      ].filter(Boolean)),
-      trendMsg && h('div', { class: trendCls ? `kpi__trend ${trendCls}` : 'kpi__trend' }, [trendMsg]),
-    ]),
-  ]);
-}
-
-function nextExamCard(ex) {
-  const start = new Date(ex.start_at);
-  const days = Math.max(0, Math.ceil((start - new Date()) / 86400000));
-  return Card({ padding: 0, dark: true, style: { overflow: 'hidden', position: 'relative' } }, [
-    (() => { const z = Zellige({ size: 360, opacity: 0.18, color: 'var(--c-paper)' }); z.style.top = '-60px'; z.style.insetInlineEnd = '-60px'; return z; })(),
-    h('div', { style: { padding: 'var(--s-6)', position: 'relative', zIndex: 2 } }, [
-      h('p.kicker', { style: { color: 'rgba(255,255,255,0.5)' } }, ['Prochain examen']),
-      h('h2', { style: { fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 400, letterSpacing: '-0.03em', color: 'var(--c-paper)', margin: 'var(--s-2) 0 var(--s-2)' } }, [
-        ex.title,
-      ]),
-      h('p', { style: { color: 'rgba(255,255,255,0.7)', margin: 0 } }, [
-        `${ex.subjects?.name || ''} · ${start.toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })}`,
-      ]),
-      h('div', { style: { display: 'flex', gap: 'var(--s-3)', marginTop: 'var(--s-5)' } }, [
-        Button({ label: 'Voir le détail', variant: 'inverse', href: `/etudiant/examens/${ex.id}`, 'data-link': true }),
-        Badge({ tone: 'accent' }, [`Dans ${days} jour${days > 1 ? 's' : ''}`]),
-      ]),
-    ]),
-  ]);
-}
-
-function welcomeCard() {
-  return Card({ padding: 24 }, [
-    h('p.kicker', {}, ['Bienvenue']),
-    h('h2', { style: { fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 400, margin: '8px 0' } }, ['Votre espace est prêt.']),
-    h('p.mute', {}, ['Vos cours, notes et examens apparaîtront ici dès que votre établissement aura saisi vos premières informations.']),
-  ]);
-}
-
-function emptyBlock(msg) {
-  return h('div.empty', {}, [
-    h('div.empty__ico', {}, [Icon('book', { size: 22 })]),
-    h('p.empty__msg', {}, [msg]),
-  ]);
-}
-
-function gradeChip(value) {
-  const v = parseFloat(value);
-  const tone = v >= 14 ? 'success' : v >= 10 ? 'accent' : 'danger';
-  return Badge({ tone, size: 'md' }, [v.toFixed(2)]);
-}
-
-function gradeTypeLabel(type) {
-  return { cours: 'Cours', controle: 'Contrôle', tp: 'TP', examen: 'Examen' }[type] || type;
-}
-
-function docTypeLabel(t) {
-  return {
-    attestation_scolarite: 'Attestation de scolarité',
-    releve_notes: 'Relevé de notes',
-    attestation_inscription: 'Attestation d\'inscription',
-    attestation_reussite: 'Attestation de réussite',
-    autre: 'Autre',
-  }[t] || t;
-}
-
-function docStatusBadge(status) {
-  return {
-    pending:  Badge({ tone: 'warn',    dot: true }, ['En attente']),
-    sent:     Badge({ tone: 'success', dot: true }, ['Envoyé']),
-    rejected: Badge({ tone: 'danger',  dot: true }, ['Refusé']),
-  }[status] || Badge({ tone: 'default' }, [status]);
 }
