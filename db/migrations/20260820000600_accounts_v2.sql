@@ -9,6 +9,21 @@
 --  Remplace `admin_create_user` (conservée pour compatibilité).
 -- ═══════════════════════════════════════════════════════════════════════════
 
+-- Déclaration anticipée : la version définitive (avec la liste de mots de
+-- passe courants) est posée par la migration de sécurité.
+create or replace function auth.check_password_policy(p_password text, p_email text default null)
+returns void
+language plpgsql
+immutable
+as $$
+begin
+  if p_password is null or length(p_password) < 10 then
+    raise exception 'Le mot de passe doit comporter au moins 10 caractères.'
+      using errcode = '22023';
+  end if;
+end;
+$$;
+
 create or replace function public.create_account(
   p_email            text,
   p_password         text,
@@ -97,9 +112,9 @@ begin
   if v_email = '' or v_email !~* '^[^@\s]+@[^@\s]+\.[^@\s]+$' then
     raise exception 'adresse email invalide';
   end if;
-  if p_password is null or length(p_password) < 8 then
-    raise exception 'le mot de passe doit faire au moins 8 caractères';
-  end if;
+  -- Politique de mot de passe appliquée en base : aucun chemin d'écriture
+  -- (API, script, console) ne peut la contourner.
+  perform auth.check_password_policy(p_password, v_email);
   if exists (select 1 from auth.users where lower(email) = v_email) then
     raise exception 'email déjà utilisé : %', v_email using errcode = '23505';
   end if;
@@ -127,7 +142,7 @@ begin
   values (
     '00000000-0000-0000-0000-000000000000',
     v_id, 'authenticated', 'authenticated', v_email,
-    extensions.crypt(p_password, extensions.gen_salt('bf', 10)),
+    auth.hash_password(p_password),
     now(),
     jsonb_build_object('provider', 'email', 'providers', jsonb_build_array('email')),
     jsonb_build_object(
@@ -142,17 +157,6 @@ begin
       'preferred_language','fr'
     ),
     now(), now(), '', '', '', ''
-  );
-
-  insert into auth.identities (
-    id, provider_id, user_id, identity_data, provider,
-    last_sign_in_at, created_at, updated_at
-  )
-  values (
-    gen_random_uuid(), v_id::text, v_id,
-    jsonb_build_object('sub', v_id::text, 'email', v_email,
-                       'email_verified', true, 'phone_verified', false),
-    'email', now(), now(), now()
   );
 
   -- 5 ─ Complète le profil (le trigger le crée en 'pending') ────────────────

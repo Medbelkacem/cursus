@@ -30,8 +30,11 @@ Centre d'Excellence, INFEP, IFEP, CNEPD, INDEFOC, EPFP**.
 | UI | HTML / CSS modulaire / JS vanilla — pas de framework lourd |
 | i18n | Système maison à 3 langues : **fr** · **en** · **ar** (avec RTL) |
 | Thèmes | Clair / sombre via `data-theme` et variables CSS |
-| Backend | **Supabase** (PostgreSQL + Auth + Row Level Security + Storage) |
-| Email | Supabase **Edge Function** + **Resend** |
+| Base de données | **PostgreSQL 14+** — Neon, Vercel Postgres, Railway, Render ou auto-hébergé |
+| API | **Fonctions serverless** (`api/`) — aucune dépendance à un fournisseur |
+| Authentification | Sessions maison : JWT signé HS256 dans un cookie `httpOnly`, révocable |
+| Autorisation | **Row Level Security** PostgreSQL, identité posée côté serveur |
+| Fichiers | Stockés dans PostgreSQL, liens signés à durée courte |
 | Hébergement | **Vercel** (`vercel.json`) — Netlify également configuré (`netlify.toml`) |
 | Tests | Migrations vérifiées sur PostgreSQL 16 · harnais de rendu Chromium headless (`.smoke/`) |
 
@@ -45,11 +48,15 @@ git clone <repo> cursus && cd cursus
 npm install
 
 # 2. Configurer l'environnement
-cp .env.example .env
-# Éditer .env : VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY au minimum
+cp .env.example .env.local
+# Éditer .env.local : DATABASE_URL et AUTH_SECRET
 
-# 3. Lancer le serveur de dev (port 5173 par défaut)
-npm run dev
+# 3. Appliquer le schéma
+npm run migrate
+
+# 4. Lancer l'API puis l'interface (deux terminaux)
+npm run dev:api    # http://localhost:3001
+npm run dev        # http://localhost:5173
 ```
 
 Le site s'ouvre sur **http://localhost:5173** avec la page d'accueil (sélecteur de langue, bascule de thème, deux CTA). Les autres écrans arrivent aux étapes suivantes.
@@ -69,13 +76,13 @@ Le site s'ouvre sur **http://localhost:5173** avec la page d'accueil (sélecteur
 ├── public/                     # Statique (favicon, robots.txt à venir)
 │
 ├── src/
-│   ├── main.js                 # Point d'entrée — orchestre i18n / thème / supabase / router
+│   ├── main.js                 # Point d'entrée — orchestre i18n / thème / API / router
 │   ├── pages/                  # Une fonction par page (returns HTMLElement)
 │   │   ├── home.js
 │   │   └── not-found.js
 │   ├── components/             # Composants réutilisables (Sidebar, Topbar, Card…)
 │   ├── lib/
-│   │   ├── supabase.js         # Client Supabase singleton
+│   │   ├── api.js              # Client de données (remplace supabase-js)
 │   │   ├── i18n.js             # 3 langues + RTL automatique
 │   │   ├── theme.js            # Clair / sombre persistant
 │   │   └── router.js           # Router vanilla pushState
@@ -89,7 +96,7 @@ Le site s'ouvre sur **http://localhost:5173** avec la page d'accueil (sélecteur
 │       ├── components.css      # Boutons, page d'accueil
 │       └── rtl.css             # Surcharges arabe
 │
-└── supabase/
+└── db/
     ├── config.toml             # Configuration CLI
     ├── migrations/             # SQL (tables + RLS) — étape 4
     └── functions/
@@ -99,28 +106,21 @@ Le site s'ouvre sur **http://localhost:5173** avec la page d'accueil (sélecteur
 
 ---
 
-## Configuration Supabase
+## Configuration de la base
 
-1. Créer un projet sur [supabase.com](https://supabase.com) (région Frankfurt recommandée).
-2. Copier l'URL et la clé `anon` dans `.env` :
-   ```env
-   VITE_SUPABASE_URL=https://xxx.supabase.co
-   VITE_SUPABASE_ANON_KEY=eyJ...
+1. Créer une base PostgreSQL 14+ (Neon, Vercel Postgres, Railway, Render, ou locale).
+2. Renseigner `.env.local` :
    ```
-3. À l'étape 4, exécuter les migrations :
+   DATABASE_URL=postgres://utilisateur:motdepasse@hote/base?sslmode=require
+   AUTH_SECRET=<48 octets aléatoires>
+   ```
+3. Appliquer les migrations et créer les premiers comptes :
    ```bash
-   npx supabase link --project-ref <ref>
-   npx supabase db push
-   ```
-4. À l'étape 7, déployer l'Edge Function :
-   ```bash
-   npx supabase functions deploy send-document-email
-   npx supabase secrets set RESEND_API_KEY=re_... RESEND_FROM_EMAIL=documents@cursus.dz
+   npm run migrate
+   npm run seed
    ```
 
-> **Pas de données fictives** : la base ne contient que le schéma. Le client ajoutera les vraies données via l'interface après déploiement.
-
----
+Voir [db/BOOTSTRAP.md](db/BOOTSTRAP.md) et [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Déploiement sur Netlify
 
@@ -130,8 +130,8 @@ Le site s'ouvre sur **http://localhost:5173** avec la page d'accueil (sélecteur
    - Build command : `npm run build`
    - Publish directory : `dist`
 3. Dans **Site settings → Environment variables**, déclarer :
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
+   - `DATABASE_URL`
+   - `AUTH_SECRET`
    - `VITE_APP_NAME` (optionnel)
    - `VITE_APP_URL` (optionnel)
 4. Déclencher un déploiement. Le SPA fallback (`netlify.toml`) assure que les liens profonds fonctionnent.
@@ -143,13 +143,13 @@ Le site s'ouvre sur **http://localhost:5173** avec la page d'accueil (sélecteur
 - [x] **Étape 1** — Initialisation : Vite, structure, `netlify.toml`, `.env.example`, README, écran d'accueil minimal.
 - [x] **Étape 2** — Design system (tokens, composants Card/Button/Badge/Input, AppShell, Sidebar, Topbar, Zellige).
 - [x] **Étape 3** — i18n complet (fr · en · ar avec RTL automatique).
-- [x] **Étape 4** — Migrations SQL Supabase (schéma + RLS + Storage + fonctions utilitaires).
+- [x] **Étape 4** — Migrations SQL (schéma + RLS + stockage + fonctions utilitaires).
 - [x] **Étape 5** — Authentification + flux `pending` / `active` / `rejected` (login, signup, /en-attente, /refuse).
 - [x] **Étape 6** — Tableaux de bord pour les 5 rôles : étudiant, professeur, administration, direction, ministère.
 - [x] **Étape 7** — Sous-pages métier (cours, présence, notes, examens, documents) + Edge Function `send-document-email` (Resend).
 - [x] **Étape 8** — Responsive mobile complet (breakpoints 480/640/720/980/1180, tables `--stack`, focus tactile renforcé, print CSS), accessibilité WCAG 2.1 AA (skip-link, landmarks, ARIA menu mobile, `prefers-contrast`, `.sr-only`), documentation finale.
 
-📄 **Voir aussi** : [`DEPLOYMENT.md`](./DEPLOYMENT.md) (guide complet Supabase + Netlify + Resend) · [`ACCESSIBILITY.md`](./ACCESSIBILITY.md) (audit Axe + checklist WCAG 2.1 AA) · [`FICHE-TECHNIQUE.md`](./FICHE-TECHNIQUE.md) (fiche projet) · [`FICHE-TECHNIQUE.pdf`](./FICHE-TECHNIQUE.pdf) (version imprimable).
+📄 **Voir aussi** : [`DEPLOYMENT.md`](./DEPLOYMENT.md) (base de données, variables, mise en production) · [`ACCESSIBILITY.md`](./ACCESSIBILITY.md) (audit Axe + checklist WCAG 2.1 AA) · [`FICHE-TECHNIQUE.md`](./FICHE-TECHNIQUE.md) (fiche projet).
 
 ### Routes câblées
 
@@ -223,10 +223,12 @@ L'arrivée en **S5** déclenche l'exigence du stage pratique et la notification 
 
 ## Base de données
 
-12 migrations dans `supabase/migrations/` :
+18 migrations dans `db/migrations/` :
 
 | Fichier | Contenu |
 | --- | --- |
+| `20260100000000_auth_schema` | Comptes, sessions, `auth.uid()`, hachage bcrypt — remplace GoTrue |
+| `20260100000100_storage_schema` | Buckets et objets — remplace Supabase Storage |
 | `20260101000000_schema` | Schéma de base (profils, établissements, matières, notes, examens) |
 | `20260101000100_functions` | Helpers RLS, trigger de création de profil |
 | `20260101000200_rls` | Policies de base |
@@ -240,12 +242,27 @@ L'arrivée en **S5** déclenche l'exigence du stage pratique et la notification 
 | `20260820000500_storage_v2` | Buckets contrats et curricula |
 | `20260820000600_accounts_v2` | Création hiérarchique de comptes, statuts, permissions, annonces |
 | `20260820000700_scope_hardening` | Cloisonnement strict des établissements + recherche multicritère |
+| `20260821000000_security` | Limitation de débit, journal des connexions, politique de mot de passe |
+| `20260821000100_storage_limits` | Alignement des limites de taille sur celles de l'API |
+| `20260821000200_grants` | Privilèges minimaux du rôle applicatif |
 
 ```bash
-npm run supabase:link
-npm run supabase:push
+# 1. Renseigner DATABASE_URL et AUTH_SECRET (voir .env.example)
+cp .env.example .env.local
+
+# 2. Appliquer les migrations
+npm run migrate
+
+# 3. Créer les premiers comptes (ministère, wilaya, établissement)
+#    après avoir remplacé les mots de passe dans db/setup/01_comptes_initiaux.sql
+npm run seed
 ```
 
-Le premier compte ministère se crée depuis le Studio Supabase (`role: 'ministry'` dans
-les métadonnées, statut `active`). Tous les autres comptes sont ensuite créés depuis
-l'interface.
+Voir [db/BOOTSTRAP.md](db/BOOTSTRAP.md) pour le détail de l'amorçage.
+
+### Développement local
+
+```bash
+npm run dev:api   # API sur :3001
+npm run dev       # interface sur :5173, /api relayé vers :3001
+```

@@ -1,4 +1,4 @@
-// Faux client Supabase pour le test de rendu hors ligne.
+// Faux client d'API pour le test de rendu hors ligne.
 // Chaque table renvoie un jeu de données minimal mais réaliste ;
 // les RPC renvoient les formes exactes attendues par l'interface.
 
@@ -215,6 +215,7 @@ const client = {
   },
 };
 
-export function initSupabase() { return client; }
-export function getSupabase() { return client; }
-export function isSupabaseConfigured() { return true; }
+export function initApi() { return client; }
+export function getApi() { return client; }
+export function isApiConfigured() { return true; }
+export const api = client;

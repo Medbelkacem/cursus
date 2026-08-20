@@ -17,18 +17,9 @@
       rel="stylesheet"
     />
 
-    <!-- Pré-chargement du thème pour éviter le flash (FOUC) -->
-    <script>
-      (function () {
-        try {
-          var t = localStorage.getItem('cursus.theme') || 'light';
-          var l = localStorage.getItem('cursus.lang') || 'fr';
-          document.documentElement.setAttribute('data-theme', t);
-          document.documentElement.setAttribute('lang', l);
-          document.documentElement.setAttribute('dir', l === 'ar' ? 'rtl' : 'ltr');
-        } catch (e) { /* private mode — ignore */ }
-      })();
-    </script>
+    <!-- Pré-application du thème/langue avant le premier rendu (évite le FOUC).
+         Fichier externe : compatible avec une CSP sans 'unsafe-inline'. -->
+    <script src="/boot.js"></script>
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 

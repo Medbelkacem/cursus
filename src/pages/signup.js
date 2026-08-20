@@ -6,13 +6,13 @@ import { Button } from '../components/button.js';
 import { signUpWithPassword } from '../lib/auth.js';
 import { navigate } from '../lib/router.js';
 import { toast } from '../components/toast.js';
-import { getSupabase, isSupabaseConfigured } from '../lib/supabase.js';
+import { getApi, isApiConfigured } from '../lib/api.js';
 
 export async function signupPage() {
   // Annuaire minimal des établissements — RPC dédiée, accessible sans compte.
   // La table elle-même reste cloisonnée par wilaya / établissement (§23).
   let establishments = [];
-  const sb = getSupabase();
+  const sb = getApi();
   if (sb) {
     const { data, error } = await sb.rpc('public_establishments');
     if (!error && data) establishments = data;
@@ -57,8 +57,8 @@ export async function signupPage() {
       e.preventDefault();
       errBox.style.display = 'none';
 
-      if (!isSupabaseConfigured()) {
-        errBox.textContent = t('auth.errors.supabase_unconfigured');
+      if (!isApiConfigured()) {
+        errBox.textContent = t('auth.errors.unconfigured');
         errBox.style.display = '';
         return;
       }

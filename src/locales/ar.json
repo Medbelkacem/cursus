@@ -105,7 +105,7 @@
     "feat_rls_t": "أمان بشكل افتراضي",
     "feat_rls_d": "Row Level Security في PostgreSQL. لا أحد يرى خارج نطاقه.",
     "cta_band_title": "هل أنتم مستعدّون لتجهيز مؤسستكم؟",
-    "cta_band_lede": "Cursus جاهزة للنشر. اضبطوا Supabase، اربطوا اسم النطاق، وفعّلوا الحسابات."
+    "cta_band_lede": "Cursus جاهزة للنشر. اربطوا قاعدة بيانات PostgreSQL، اربطوا اسم النطاق، وفعّلوا الحسابات."
   },
   "auth": {
     "login_title": "تسجيل الدخول",
@@ -143,7 +143,7 @@
       "missing": "يرجى ملء كلّ الحقول المطلوبة.",
       "password_mismatch": "يجب أن تتطابق كلمتا المرور.",
       "password_short": "كلمة المرور يجب أن تحتوي 8 أحرف على الأقل.",
-      "supabase_unconfigured": "لم تتمّ تهيئة المنصة. عيّن VITE_SUPABASE_URL و VITE_SUPABASE_ANON_KEY في .env."
+      "unconfigured": "لم تتمّ تهيئة المنصة. عيّن DATABASE_URL و AUTH_SECRET في بيئة التشغيل."
     }
   },
   "not_found": {

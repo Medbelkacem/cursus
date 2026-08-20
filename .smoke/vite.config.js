@@ -10,7 +10,7 @@ export default defineConfig({
   root: r('.'),
   resolve: {
     alias: [
-      { find: /^\.{1,2}\/(?:[\w.\-/]*\/)?supabase\.js$/, replacement: r('./mock-supabase.js') },
+      { find: /^\.{1,2}\/(?:[\w.\-/]*\/)?api\.js$/, replacement: r('./mock-api.js') },
       { find: /^\.{1,2}\/(?:[\w.\-/]*\/)?auth\.js$/,     replacement: r('./mock-auth.js') },
     ],
   },

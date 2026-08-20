@@ -8,7 +8,7 @@ import '../src/styles/rtl.css';
 
 import { initI18n } from '../src/lib/i18n.js';
 import { initTheme } from '../src/lib/theme.js';
-import { initSupabase } from '../src/lib/supabase.js';
+import { initApi } from '../src/lib/api.js';
 
 const PAGES = [
   ['../src/pages/home.js', 'homePage', 'ministry'],
@@ -94,7 +94,7 @@ function audit(vw) {
 async function run() {
   await initI18n();
   initTheme();
-  initSupabase();
+  initApi();
 
   const vw = window.innerWidth;
   const app = document.getElementById('app');

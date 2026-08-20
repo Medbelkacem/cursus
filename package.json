@@ -9,13 +9,14 @@
     "build": "vite build",
     "preview": "vite preview --port 4173",
     "lint": "echo 'Add ESLint here if desired'",
-    "supabase:link": "supabase link",
-    "supabase:push": "supabase db push",
-    "supabase:functions:deploy": "supabase functions deploy send-document-email"
+    "migrate": "node scripts/migrate.mjs",
+    "seed": "node scripts/migrate.mjs --seed",
+    "dev:api": "node scripts/dev-api.mjs",
+    "dev:all": "node scripts/dev-api.mjs & vite"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.0",
-    "chart.js": "^4.4.4"
+    "chart.js": "^4.4.4",
+    "pg": "^8.13.1"
   },
   "devDependencies": {
     "vite": "^5.4.0"

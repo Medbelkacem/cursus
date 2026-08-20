@@ -105,7 +105,7 @@
     "feat_rls_t": "Sécurité par défaut",
     "feat_rls_d": "Row Level Security PostgreSQL. Aucun rôle ne voit hors de son périmètre.",
     "cta_band_title": "Prêt à équiper votre établissement ?",
-    "cta_band_lede": "Cursus est conçu pour être déployé tel quel. Configurez Supabase, branchez votre nom de domaine, et activez vos comptes."
+    "cta_band_lede": "Cursus est conçu pour être déployé tel quel. Branchez une base PostgreSQL, pointez votre nom de domaine, et activez vos comptes."
   },
   "auth": {
     "login_title": "Connexion",
@@ -143,7 +143,7 @@
       "missing": "Veuillez remplir tous les champs requis.",
       "password_mismatch": "Les deux mots de passe doivent correspondre.",
       "password_short": "Le mot de passe doit contenir au moins 8 caractères.",
-      "supabase_unconfigured": "La plateforme n'est pas encore configurée. Définissez VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY dans .env."
+      "unconfigured": "La plateforme n'est pas encore configurée. Définissez DATABASE_URL et AUTH_SECRET dans l'environnement."
     }
   },
   "not_found": {

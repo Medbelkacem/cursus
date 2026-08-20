@@ -1,16 +1,16 @@
 // ─────────────────────────────────────────────────────────────────────────────
-//  Couche d'accès aux données — toutes les requêtes Supabase de la plateforme.
+//  Couche d'accès aux données — toutes les requêtes de la plateforme.
 //
 //  Chaque fonction renvoie `{ data, error }` ou lève une erreur explicite.
 //  Le cloisonnement (§23) est assuré par les policies RLS côté PostgreSQL :
 //  ce module ne fait que formuler les requêtes, il n'accorde aucun droit.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { getSupabase } from './supabase.js';
+import { getApi } from './api.js';
 
 function sb() {
-  const c = getSupabase();
-  if (!c) throw new Error('SUPABASE_UNCONFIGURED');
+  const c = getApi();
+  if (!c) throw new Error('API_UNCONFIGURED');
   return c;
 }
 

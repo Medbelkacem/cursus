@@ -10,7 +10,7 @@ import { Card } from '../../components/card.js';
 import { Button } from '../../components/button.js';
 import { Zellige } from '../../components/zellige.js';
 import { navFor, roleLabel, initialsOf } from '../../lib/nav.js';
-import { getSupabase } from '../../lib/supabase.js';
+import { getApi } from '../../lib/api.js';
 import { KPI, Grid, EmptyBlock, CardSectionHead, fmtDateTime, ErrorBlock } from '../../lib/page-helpers.js';
 
 export async function teacherDashboard() {
@@ -18,7 +18,7 @@ export async function teacherDashboard() {
   if (!guard.ok) { navigate(guard.redirect); return h('div'); }
   const { profile, user } = guard.state;
 
-  const sb = getSupabase();
+  const sb = getApi();
   let data = { subjects: [], upcomingExams: [], pendingSubmissions: 0, recentGrades: [] };
   let err = null;
   if (sb) {

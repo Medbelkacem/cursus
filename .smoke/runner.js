@@ -7,7 +7,7 @@ import '../src/styles/rtl.css';
 
 import { initI18n } from '../src/lib/i18n.js';
 import { initTheme } from '../src/lib/theme.js';
-import { initSupabase } from '../src/lib/supabase.js';
+import { initApi } from '../src/lib/api.js';
 
 const errors = [];
 const origError = console.error;
@@ -90,7 +90,7 @@ const MODULES = import.meta.glob('../src/pages/**/*.js');
 async function run() {
   await initI18n();
   initTheme();
-  initSupabase();
+  initApi();
 
   const app = document.getElementById('app');
   const results = [];

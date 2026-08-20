@@ -10,7 +10,7 @@ import { Button } from '../components/button.js';
 import { Field, Input, Select } from '../components/input.js';
 import { Badge } from '../components/badge.js';
 import { navFor, roleLabel, initialsOf } from '../lib/nav.js';
-import { getSupabase } from '../lib/supabase.js';
+import { getApi } from '../lib/api.js';
 import { toast } from '../components/toast.js';
 import { fmtDate, ErrorBlock } from '../lib/page-helpers.js';
 
@@ -19,7 +19,7 @@ export async function profilePage() {
   if (!guard.ok) { navigate(guard.redirect); return h('div'); }
   const { profile, user, role } = guard.state;
 
-  const sb = getSupabase();
+  const sb = getApi();
   let extra = null, err = null;
   if (sb) {
     if (role === 'student') {

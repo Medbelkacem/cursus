@@ -8,7 +8,7 @@ import { AppShell } from '../../components/layout.js';
 import { Card } from '../../components/card.js';
 import { Button } from '../../components/button.js';
 import { navFor, roleLabel, initialsOf } from '../../lib/nav.js';
-import { getSupabase } from '../../lib/supabase.js';
+import { getApi } from '../../lib/api.js';
 import { toast } from '../../components/toast.js';
 import { EmptyBlock, ErrorBlock, fmtDate } from '../../lib/page-helpers.js';
 
@@ -17,7 +17,7 @@ export async function studentCoursesPage() {
   if (!guard.ok) { navigate(guard.redirect); return h('div'); }
   const { profile, user } = guard.state;
 
-  const sb = getSupabase();
+  const sb = getApi();
   let items = [], err = null;
   if (sb) {
     try {

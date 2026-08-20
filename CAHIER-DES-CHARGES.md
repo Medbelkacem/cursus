@@ -69,7 +69,7 @@ reste manuelle tant que l'administration n'a rien configuré.
 
 ## Tests
 
-- `supabase/migrations/` : les 12 migrations sont appliquées et vérifiées sur PostgreSQL 16
+- `db/migrations/` : les 18 migrations sont appliquées et vérifiées sur PostgreSQL 16
   (structure, moteur de calcul, cloisonnement RLS entre wilayas et entre rôles).
 - `.smoke/` : harnais de rendu hors ligne — 48 rendus de pages et 40 parcours interactifs
   (ouverture des formulaires, filtres, tri, recherche) exécutés dans Chromium headless.
@@ -121,3 +121,75 @@ Comportement selon la largeur :
 npx vite --config .smoke/vite.config.js    # harnais
 node <chemin>/responsive.js                # audit multi-viewports
 ```
+
+
+---
+
+## Architecture
+
+Aucune dépendance à un fournisseur : la plateforme tourne sur PostgreSQL standard
+et un environnement d'exécution Node.
+
+```
+Navigateur
+   │  cookie httpOnly (JWT signé, révocable)
+   ▼
+Fonctions serverless  api/
+   │  ├── auth/[action]   connexion, inscription, session, mot de passe
+   │  ├── db              requêtes de données (remplace PostgREST)
+   │  ├── rpc             fonctions PostgreSQL exposées, sur liste blanche
+   │  ├── storage         dépôt, liens signés, téléchargement
+   │  └── email           envoi d'un document administratif
+   │
+   │  BEGIN; set_config('request.jwt.claim.sub', <identité vérifiée>, true);
+   │         set local role app_authenticated;
+   ▼
+PostgreSQL — Row Level Security
+   └── 32 tables, politiques par rôle et par périmètre
+```
+
+### Ce que le remplacement de Supabase a changé
+
+| | Avant | Après |
+| --- | --- | --- |
+| Identité | Clé anonyme dans le navigateur, JWT posé par le client | Cookie `httpOnly` ; l'identité est posée par le serveur à partir d'un jeton vérifié |
+| Vol de session par XSS | Jeton lisible en JavaScript | Jeton illisible en JavaScript |
+| Révocation | À l'expiration du jeton | Immédiate — chaque requête vérifie la session en base |
+| Surface réseau | Hôte tiers dans la CSP (`connect-src`) | `connect-src 'self'` — aucune origine externe |
+| Poids du client | +201 Ko de `supabase-js` | Client maison, ~6 Ko |
+| Portabilité | Liée à un fournisseur | Toute base PostgreSQL 14+ |
+
+### Défense en profondeur
+
+L'autorisation est appliquée à quatre niveaux indépendants :
+
+1. **Interface** — la navigation et les écrans s'adaptent au rôle (confort, pas sécurité).
+2. **API** — liste blanche des fonctions appelables, tables système inaccessibles,
+   écritures refusées sans session.
+3. **Privilèges PostgreSQL** — le rôle applicatif ne possède aucune table et n'a
+   aucun droit sur le schéma `auth`.
+4. **Row Level Security** — dernier mot sur chaque ligne, y compris si les trois
+   couches précédentes étaient contournées.
+
+### Contrôles d'authentification
+
+| Contrôle | Mise en œuvre |
+| --- | --- |
+| Hachage des mots de passe | bcrypt (`pgcrypto`, coût 10) |
+| Politique de mot de passe | 10 caractères, lettre + chiffre, ni identifiant ni mot de passe courant — appliquée **en base**, donc valable pour l'API comme pour un script |
+| Limitation du débit | 20 tentatives/IP et 10/compte par quart d'heure |
+| Verrouillage | 15 minutes après 8 échecs consécutifs |
+| Énumération de comptes | Message et temps de réponse identiques qu'un compte existe ou non |
+| Élévation par inscription | Seuls `student` et `teacher` sont acceptés à l'auto-inscription |
+| Changement de mot de passe | Exige le mot de passe actuel et révoque toutes les autres sessions |
+| Journalisation | Chaque tentative, réussie ou non, avec IP et agent |
+
+### Fichiers déposés
+
+Les pièces jointes proviennent d'utilisateurs : elles ne sont jamais servies comme
+du contenu actif.
+
+- Types de fichiers restreints par bucket (le dépôt d'un `text/html` est refusé) ;
+- `Content-Disposition: attachment` et `X-Content-Type-Options: nosniff` au téléchargement ;
+- liens signés valables 5 minutes, portant l'identité du demandeur — la vérification
+  RLS est refaite au téléchargement, un lien ne confère donc aucun droit propre.

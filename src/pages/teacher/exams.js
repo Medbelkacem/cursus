@@ -10,7 +10,7 @@ import { Button } from '../../components/button.js';
 import { Field, Select, Input, Textarea } from '../../components/input.js';
 import { Badge } from '../../components/badge.js';
 import { navFor, roleLabel, initialsOf } from '../../lib/nav.js';
-import { getSupabase } from '../../lib/supabase.js';
+import { getApi } from '../../lib/api.js';
 import { toast } from '../../components/toast.js';
 import { EmptyBlock, ErrorBlock, fmtDateTime } from '../../lib/page-helpers.js';
 
@@ -19,7 +19,7 @@ export async function teacherExamsPage() {
   if (!guard.ok) { navigate(guard.redirect); return h('div'); }
   const { profile, user } = guard.state;
 
-  const sb = getSupabase();
+  const sb = getApi();
   let subjects = [], exams = [], err = null;
   if (sb) {
     try {
@@ -74,7 +74,7 @@ export async function teacherExamsPage() {
 }
 
 function createExamForm(subjects, uid) {
-  const sb = getSupabase();
+  const sb = getApi();
   const title = Input({ placeholder: 'Examen final — Mathématiques' });
   const subjectSel = Select({ options: [{ value: '', label: '— matière —' }, ...subjects.map((s) => ({ value: s.id, label: s.name }))] });
   const kind = Select({ value: 'exam', options: [{ value: 'exam', label: 'Examen' }, { value: 'tp', label: 'TP' }] });
@@ -103,7 +103,7 @@ function createExamForm(subjects, uid) {
     h('div', { style: { display: 'flex', justifyContent: 'flex-end', marginTop: 12 } }, [
       Button({ label: 'Programmer', variant: 'primary', icon: 'plus',
         onClick: async () => {
-          if (!sb) { toast('Supabase non configuré.', { tone: 'danger' }); return; }
+          if (!sb) { toast('API non configurée.', { tone: 'danger' }); return; }
           if (!title.value || !subjectSel.value || !start.value || !end.value || !dur.value) {
             toast('Tous les champs requis ne sont pas remplis.', { tone: 'warn' }); return;
           }

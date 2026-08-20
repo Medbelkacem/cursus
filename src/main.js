@@ -4,7 +4,7 @@
 //  Ordre d'amorçage :
 //    1. Styles globaux (tokens, base, RTL, thèmes).
 //    2. i18n + thème (instantanés).
-//    3. Supabase + Auth (réseau, mais asynchrone non-bloquant pour les pages
+//    3. Client API + Auth (réseau, mais non bloquant pour les pages
 //       publiques — le router gère la redirection si une page protégée est
 //       demandée pendant le chargement de la session).
 //    4. Router : monte la page courante.
@@ -17,7 +17,7 @@ import './styles/rtl.css';
 
 import { initI18n } from './lib/i18n.js';
 import { initTheme } from './lib/theme.js';
-import { initSupabase } from './lib/supabase.js';
+import { initApi } from './lib/api.js';
 import { initAuth } from './lib/auth.js';
 import { initRouter } from './lib/router.js';
 
@@ -26,7 +26,7 @@ async function boot() {
 
   await initI18n();
   initTheme();
-  initSupabase();
+  initApi();
   await initAuth();         // attend la session avant le premier render
   await initRouter(root);
 

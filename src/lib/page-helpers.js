@@ -83,7 +83,7 @@ export function daysUntil(iso) {
   return Math.max(0, Math.ceil((d - new Date()) / 86400000));
 }
 
-// Wrapper d'erreur uniforme — utilisé quand une requête Supabase échoue.
+// Wrapper d'erreur uniforme — utilisé quand une requête à l'API échoue.
 export function ErrorBlock(err) {
   return h('div', {
     style: {

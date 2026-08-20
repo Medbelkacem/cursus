@@ -2,8 +2,8 @@
 --  Cursus — Amorçage : ministère, direction de Tipaza, INSFP de Bou Ismaïl
 --
 --  ⚠️  Ce fichier n'est PAS une migration. Les migrations ne créent jamais de
---      donnée (§1, §24). C'est un script d'exploitation, à exécuter une fois
---      dans le SQL Editor de Supabase après `supabase db push`.
+--      donnée (§1, §24). C'est un script d'exploitation, exécuté une fois :
+--          npm run seed        (applique les migrations puis ce script)
 --
 --  ⚠️  REMPLACER LES TROIS MOTS DE PASSE ci-dessous avant exécution, puis les
 --      changer à la première connexion.
@@ -42,6 +42,11 @@ declare
   v_estab  uuid;
   v_res    jsonb;
 begin
+  -- La politique de mot de passe s'applique aussi à l'amorçage.
+  perform auth.check_password_policy(c_min_pass, c_min_email);
+  if c_dir_email is not null then perform auth.check_password_policy(c_dir_pass, c_dir_email); end if;
+  if c_ins_email is not null then perform auth.check_password_policy(c_ins_pass, c_ins_email); end if;
+
   -- ── 1. Compte ministère (amorçage direct) ────────────────────────────────
   select id into v_min from auth.users where lower(email) = lower(c_min_email);
 
@@ -55,21 +60,11 @@ begin
     ) values (
       '00000000-0000-0000-0000-000000000000', v_min, 'authenticated', 'authenticated',
       lower(c_min_email),
-      extensions.crypt(c_min_pass, extensions.gen_salt('bf', 10)), now(),
+      auth.hash_password(c_min_pass), now(),
       jsonb_build_object('provider', 'email', 'providers', jsonb_build_array('email')),
       jsonb_build_object('role', 'ministry', 'first_name', c_min_prenom,
                          'last_name', c_min_nom, 'preferred_language', 'fr'),
       now(), now(), '', '', '', ''
-    );
-
-    insert into auth.identities (
-      id, provider_id, user_id, identity_data, provider,
-      last_sign_in_at, created_at, updated_at
-    ) values (
-      gen_random_uuid(), v_min::text, v_min,
-      jsonb_build_object('sub', v_min::text, 'email', lower(c_min_email),
-                         'email_verified', true, 'phone_verified', false),
-      'email', now(), now(), now()
     );
 
     raise notice 'Compte ministère créé : %', c_min_email;

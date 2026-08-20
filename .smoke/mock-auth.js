@@ -1,5 +1,5 @@
 // Faux module d'authentification : le rôle testé est lu depuis window.__ROLE__.
-import { getSupabase, isSupabaseConfigured } from '../src/lib/supabase.js';
+import { getApi, isApiConfigured } from '../src/lib/api.js';
 
 const PROFILES = {
   ministry:  { id: 'm1', role: 'ministry',  first_name: 'Amel',  last_name: 'Ministre',
@@ -34,6 +34,7 @@ export function getState() {
 export function onAuthChange() { return () => {}; }
 export async function signInWithPassword() { return getState(); }
 export async function signUpWithPassword() { return getState(); }
+export async function changePassword() { return true; }
 export async function signOut() {}
 export function dashboardPathFor(role) {
   return ({ student: '/etudiant', teacher: '/professeur', admin: '/administration',

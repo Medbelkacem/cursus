@@ -6,7 +6,7 @@ import { Button } from '../components/button.js';
 import { signInWithPassword, dashboardPathFor } from '../lib/auth.js';
 import { navigate } from '../lib/router.js';
 import { toast } from '../components/toast.js';
-import { isSupabaseConfigured } from '../lib/supabase.js';
+import { isApiConfigured } from '../lib/api.js';
 
 export async function loginPage() {
   const errBox = h('p.field__error', { style: { display: 'none' } });
@@ -18,8 +18,8 @@ export async function loginPage() {
     onSubmit: async (e) => {
       e.preventDefault();
       errBox.style.display = 'none';
-      if (!isSupabaseConfigured()) {
-        errBox.textContent = t('auth.errors.supabase_unconfigured');
+      if (!isApiConfigured()) {
+        errBox.textContent = t('auth.errors.unconfigured');
         errBox.style.display = '';
         return;
       }
@@ -37,8 +37,8 @@ export async function loginPage() {
         toast('Connexion réussie.', { tone: 'success' });
         navigate(dashboardPathFor(state.role));
       } catch (err) {
-        errBox.textContent = err?.message === 'SUPABASE_UNCONFIGURED'
-          ? t('auth.errors.supabase_unconfigured')
+        errBox.textContent = err?.message === 'API_UNCONFIGURED'
+          ? t('auth.errors.unconfigured')
           : t('auth.errors.invalid_credentials');
         errBox.style.display = '';
       } finally {

@@ -7,7 +7,7 @@ import { navigate } from '../../lib/router.js';
 import { AppShell } from '../../components/layout.js';
 import { Card } from '../../components/card.js';
 import { navFor, roleLabel, initialsOf } from '../../lib/nav.js';
-import { getSupabase } from '../../lib/supabase.js';
+import { getApi } from '../../lib/api.js';
 import { KPI, Grid, EmptyBlock, ErrorBlock, fmtDate, StatusBadge } from '../../lib/page-helpers.js';
 
 export async function studentAttendancePage() {
@@ -15,7 +15,7 @@ export async function studentAttendancePage() {
   if (!guard.ok) { navigate(guard.redirect); return h('div'); }
   const { profile, user } = guard.state;
 
-  const sb = getSupabase();
+  const sb = getApi();
   let rows = [], rate = null, present = 0, late = 0, absent = 0, err = null;
   if (sb) {
     try {

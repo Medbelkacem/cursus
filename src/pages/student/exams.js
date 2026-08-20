@@ -10,7 +10,7 @@ import { Card } from '../../components/card.js';
 import { Button } from '../../components/button.js';
 import { Badge } from '../../components/badge.js';
 import { navFor, roleLabel, initialsOf } from '../../lib/nav.js';
-import { getSupabase } from '../../lib/supabase.js';
+import { getApi } from '../../lib/api.js';
 import { EmptyBlock, ErrorBlock, fmtDateTime, daysUntil } from '../../lib/page-helpers.js';
 
 export async function studentExamsPage(ctx) {
@@ -18,7 +18,7 @@ export async function studentExamsPage(ctx) {
   if (!guard.ok) { navigate(guard.redirect); return h('div'); }
   const { profile, user } = guard.state;
 
-  const sb = getSupabase();
+  const sb = getApi();
   let upcoming = [], past = [], err = null, detail = null;
   if (sb) {
     try {

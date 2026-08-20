@@ -9,7 +9,7 @@ import { Card } from '../../components/card.js';
 import { Button } from '../../components/button.js';
 import { Field, Select, Input } from '../../components/input.js';
 import { navFor, roleLabel, initialsOf } from '../../lib/nav.js';
-import { getSupabase } from '../../lib/supabase.js';
+import { getApi } from '../../lib/api.js';
 import { toast } from '../../components/toast.js';
 import { EmptyBlock, ErrorBlock, fmtDate } from '../../lib/page-helpers.js';
 
@@ -18,7 +18,7 @@ export async function teacherCoursesPage() {
   if (!guard.ok) { navigate(guard.redirect); return h('div'); }
   const { profile, user } = guard.state;
 
-  const sb = getSupabase();
+  const sb = getApi();
   let subjects = [], items = [], err = null;
   if (sb) {
     try {
@@ -48,7 +48,7 @@ export async function teacherCoursesPage() {
       h('div', { style: { display: 'flex', justifyContent: 'flex-end', marginTop: 12 } }, [
         Button({ label: 'Téléverser', variant: 'primary', icon: 'upload',
           onClick: async () => {
-            if (!sb) { toast('Supabase non configuré.', { tone: 'danger' }); return; }
+            if (!sb) { toast('API non configurée.', { tone: 'danger' }); return; }
             if (!subjectSel.value || !titleInput.value || !fileInput.files?.[0]) {
               toast('Sélectionnez une matière, un titre et un fichier.', { tone: 'warn' }); return;
             }

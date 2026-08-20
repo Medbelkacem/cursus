@@ -10,7 +10,7 @@ import { Card } from '../../components/card.js';
 import { Button } from '../../components/button.js';
 import { Field, Select, Input } from '../../components/input.js';
 import { navFor, roleLabel, initialsOf } from '../../lib/nav.js';
-import { getSupabase } from '../../lib/supabase.js';
+import { getApi } from '../../lib/api.js';
 import { toast } from '../../components/toast.js';
 import { EmptyBlock, ErrorBlock } from '../../lib/page-helpers.js';
 
@@ -19,7 +19,7 @@ export async function teacherAttendancePage() {
   if (!guard.ok) { navigate(guard.redirect); return h('div'); }
   const { profile, user } = guard.state;
 
-  const sb = getSupabase();
+  const sb = getApi();
   let mySubjects = [], err = null;
   if (sb) {
     try {

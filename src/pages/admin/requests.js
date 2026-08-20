@@ -12,7 +12,7 @@ import { Card } from '../../components/card.js';
 import { Button } from '../../components/button.js';
 import { Field, Select } from '../../components/input.js';
 import { navFor, roleLabel, initialsOf } from '../../lib/nav.js';
-import { getSupabase } from '../../lib/supabase.js';
+import { getApi } from '../../lib/api.js';
 import { toast } from '../../components/toast.js';
 import { EmptyBlock, ErrorBlock, fmtDate, StatusBadge } from '../../lib/page-helpers.js';
 
@@ -29,7 +29,7 @@ export async function adminRequestsPage() {
   if (!guard.ok) { navigate(guard.redirect); return h('div'); }
   const { profile } = guard.state;
 
-  const sb = getSupabase();
+  const sb = getApi();
   const filterSel = Select({ value: 'pending', options: [
     { value: 'pending', label: 'En attente' },
     { value: 'sent',    label: 'Envoyés' },
@@ -106,7 +106,7 @@ export async function adminRequestsPage() {
 
       // Invocation de la function (non bloquante si fonction non déployée).
       try {
-        const inv = await sb.functions.invoke('send-document-email', {
+        const inv = await sb.functions.invoke('email', {
           body: {
             request_id: req.id, storage_path: path,
             recipient_email: req.profiles?.email,

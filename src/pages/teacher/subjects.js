@@ -5,7 +5,7 @@ import { navigate } from '../../lib/router.js';
 import { AppShell } from '../../components/layout.js';
 import { Card } from '../../components/card.js';
 import { navFor, roleLabel, initialsOf } from '../../lib/nav.js';
-import { getSupabase } from '../../lib/supabase.js';
+import { getApi } from '../../lib/api.js';
 import { EmptyBlock, ErrorBlock, fmtDate } from '../../lib/page-helpers.js';
 
 export async function teacherSubjectsPage() {
@@ -13,7 +13,7 @@ export async function teacherSubjectsPage() {
   if (!guard.ok) { navigate(guard.redirect); return h('div'); }
   const { profile, user } = guard.state;
 
-  const sb = getSupabase();
+  const sb = getApi();
   let subjects = [], err = null;
   if (sb) {
     try {
